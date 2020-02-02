@@ -26,7 +26,7 @@ public class GameAuthenticator implements Authenticator<BasicCredentials, GameUs
     {
         if (VALID_USERS.containsKey(credentials.getUsername()) && "password".equals(credentials.getPassword())) 
         {
-            // FIXME: Finish the authorize method based on BasicAuth Security Example for new GameUser
+        	// return the user data if the user logs in with valid credentials
         	return Optional.of(new GameUser(credentials.getUsername(), VALID_USERS.get(credentials.getUsername())));
 
         }

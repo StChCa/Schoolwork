@@ -40,10 +40,12 @@ public class GameAuthApplication extends Application<Configuration> {
 		
 		LOGGER.info("Registering REST resources");
  
-		// register GameUserRESTController
-		e.jersey().register(new GameUserRESTController(e.getValidator()));
-		// Instantiate a JerseyClientBuilder object and pass in the enviornment.
-		JerseyClientBuilder DemoRESTClient = new JerseyClientBuilder(e);
+		// register GameUserRESTController 
+		// Instantiate a JerseyClientBuilder object and pass in the enviornment.		
+        e.jersey().register(new GameUserRESTController(e.getValidator()));
+        
+        final Client client = new JerseyClientBuilder(e).build("DemoRESTClient");
+        e.jersey().register(new RESTClientController(client));
 
 
 		// Application health check

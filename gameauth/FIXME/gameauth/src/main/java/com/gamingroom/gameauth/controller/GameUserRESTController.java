@@ -42,7 +42,7 @@ public class GameUserRESTController {
         return Response.ok(GameUserDB.getGameUsers()).build();
     }
  
-    // Add RolesAllowed annotation for USER based on BasicAuth Security Example 
+    // Add RolesAllowed annotation for USER based on BasicAuth Security Example
     @RolesAllowed({ "USER" })
     @GET
     @Path("/{id}")
