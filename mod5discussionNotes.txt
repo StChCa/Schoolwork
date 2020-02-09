@@ -1,0 +1,7 @@
+If an account is compromized, it should only be able to impact the account itself. We can do this by properly limiting the account ACCESS RIGHTS. We can do this by implementing the NEED TO KNOW ideology where a process only has access to the resources that are required to complete the task at hand. nothing more.
+
+And the principal of least privilege where
+
+
+
+Need to know means the user has a legitimate reason to access something. Least privilege can then be implemented to limit that access and limit what the user can do with that something. ... Give the user the least amount of privilege 	they need to get their need done.
