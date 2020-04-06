@@ -2,6 +2,8 @@
 #include <iostream>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
+#include <vector>
+#include <cmath>
 
 using namespace std; // Use the standar namespace
 
@@ -13,7 +15,8 @@ using namespace std; // Use the standar namespace
 #endif
 
 // Variables for window width and height
-int WindowWidth = 800, WindowHeight = 600;
+GLint shaderProgram, WindowWidth = 800, WindowHeight = 600;
+GLuint VBO, VAO, EBO, texture, numPoints;
 
 /* User-defined Function prototypes to:
  * initialize the program, st the window size,
@@ -26,6 +29,11 @@ void UResizeWindow(int, int);
 void URenderGraphics(void);
 void UCreateVBO(void);
 void UCreateShaders(void);
+void UResizeWindow(int, int);
+void URenderGraphics(void);
+void UCreateBuffers(void);
+void test(vector<GLfloat>&, vector<GLuint>&);
+void createCircle(int, int, GLfloat, GLfloat, GLfloat, vector<GLfloat>&, vector<GLuint>&);
 
 // Vertex Shader Program Source Code
 const GLchar * VertexShader = GLSL(440,
@@ -77,6 +85,8 @@ void UInitialize(int argc, char* argv[]){
 	UCreateVBO(); // Calls the function to create the Vertex Buffer Object
 
 	UCreateShaders(); // Calls the function to create the Shader Program
+
+	UCreateBuffers();
 
 	//Sets the background color of the window to black. Optional
 	glClearColor(0.0f,0.0f,0.0f,1.0f);
@@ -208,6 +218,109 @@ void UCreateShaders(void){
 
 	glLinkProgram(ProgramId); // Links the Shader program
 	glUseProgram(ProgramId); // Uses the shader program
+}
+
+/*Creates the Buffer and Array Objects*/
+void UCreateBuffers()
+{
+
+	// Position and Color data
+	vector<GLfloat> verticesVec;
+	vector<GLuint> polygonsVec;
+
+//	verticesVec.reserve(30);
+//	polygonsVec.reserve(18);
+
+	//test(verticesVec, polygonsVec);
+
+	createCircle(1, 4, 0.0f, 0.0f, 0.0f, verticesVec, polygonsVec);
+
+	// Print polys for testing
+	for (unsigned int i = 0; i < verticesVec.size(); i++){
+		cout << verticesVec[i];
+		cout << "  ";
+	}
+	cout << endl;
+	for (unsigned int i = 0; i < polygonsVec.size(); i++){
+		cout << polygonsVec[i];
+		cout << "  ";
+	}
+
+		// Convert vectors into arrays for drawing
+		GLfloat vertices[verticesVec.size()];
+		for (unsigned int i = 0; i < verticesVec.size(); i++){
+			vertices[i] = verticesVec[i];
+		}
+
+		GLuint indices[polygonsVec.size()];
+		for (unsigned int i = 0; i < polygonsVec.size(); i++){
+			indices[i] = polygonsVec[i];
+		}
+
+		// Generate buffer ids
+		glGenVertexArrays(1, &VAO);
+		glGenBuffers(1, &VBO);
+		glGenBuffers(1, &EBO);
+
+		// Activate the Vertex Array Object before binding and setting any VBOs and Vertex Attribute Pointers.
+		glBindVertexArray(VAO);
+
+		// Activate the VBO
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //Copy indices to EBO
+
+		// Activate the Elements Buffer Object / Indices
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); // Copy indices to  EBO
+
+		// Set attribute pointer to 0 to hold Position data
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(0); // Enables vertexa attribute
+
+		// Set attribute pointer 1 to hold Color data
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+		glEnableVertexAttribArray(1); // Enable vertex attribute
+
+		glBindVertexArray(0); // Deactivates the VAO which is good practice
+
+}
+
+void createCircle(int radius, int numPoints, GLfloat centX, GLfloat centY, GLfloat centZ, vector<GLfloat>& verts, vector<GLuint>& polys){
+	GLuint prevSize = verts.size() / 6;
+	float theta = 360.0f / (float)numPoints;
+
+	// Push a point for the center point @ prevSize + 0
+	verts.push_back(centX);
+	verts.push_back(centY);
+	verts.push_back(centZ);
+	verts.push_back(1.0f);
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+
+	// Generate points on the circle using basic trig
+	for (int i = 0; i < numPoints; i++){
+		// get degrees (theta) for current point
+		float deg = theta * i;
+
+		verts.push_back(cos(deg) * radius);
+		verts.push_back(sin(deg) * radius);
+		verts.push_back(centZ);
+		verts.push_back(1.0f);
+		verts.push_back(0.0f);
+		verts.push_back(0.0f);
+
+	}
+
+	// Create a triangle between center, x and x-1 points on the circle (start with pt 2)
+	for (int i = 2; i < numPoints + 2; i++){
+
+		// push centerOfCircle point
+		polys.push_back(prevSize + 0);
+		polys.push_back(prevSize + i);
+		polys.push_back(prevSize + i - 1);
+		//break;
+	}
+
 }
 
 
