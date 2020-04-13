@@ -23,22 +23,25 @@ GLint cubeShaderProgram, lampShaderProgram, WindowWidth = 880, WindowHeight = 60
 GLuint VBO, CubeVAO, LightVAO;
 
 // Subject position and scale
-glm::vec3 cubePosition(0.0f, 0.0f, 0.0f);
-glm::vec3 cubeScale(2.0f);
+glm::vec3 cubePosition(0.0f, -1.0f, 0.0f);
+glm::vec3 cubeScale(1.2f);
 
 // Cube light color
-glm::vec3 objectColor(0.6f, 0.5f, 0.75f);
-glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+glm::vec3 objectColor(1.0f, 1.0f, 1.0f);
+glm::vec3 lightColor(0.7f, 1.0f, 0.7f); // slightly green for light1
+glm::vec3 light2Color(1.0f, 1.0f, 1.0f); // white light from light2
 
 // Light position and scale
-glm::vec3 lightPosition(0.5f, 0.5f, -3.0f);
-glm::vec3 lightScale(0.3f);
+glm::vec3 lightPosition(-5.0f, 5.0f, -5.0f);
+glm::vec3 lightScale(1.0f); // Light 1 intensity 100%
+glm::vec3 light2Position(0.0f, 0.f, 5.0f);
+glm::vec3 light2Scale(0.10f); // light2 intensity 10%
 
 // Camera position
 glm::vec3 cameraPosition(0.0f, 0.0f, -6.0f);
 
 //Camera rotation
-float cameraRotation = glm::radians(-25.0f);
+float cameraRotation = glm::radians(65.0f);
 
 
 // Function prototypes
@@ -84,68 +87,50 @@ const GLchar * cubeFragmentShaderSource = GLSL(330,
 		// uniform / global vars for object color, light color, light pos and camera/view pos
 		uniform vec3 objectColor;
 		uniform vec3 lightColor;
+		uniform vec3 light2Color;
 		uniform vec3 lightPos;
+		uniform vec3 light2Pos;
 		uniform vec3 viewPosition;
 
 	void main(){
 
 		// Phong lighting model calculations to generate ambient, diffuse, and specular components
 
-		// Calculate ambient lighting
-		float ambientStrength = 0.1f; // Set ambient or global lighting strength
-		vec3 ambient = ambientStrength * lightColor; // Generate ambient light color
+
+		/// Commented out ambient lighting because it doesn't appear to be used in the examples of activity 8
+//		// Calculate ambient lighting
+//		float ambientStrength = 0.1f; // Set ambient or global lighting strength
+//		vec3 ambient = ambientStrength * lightColor * 1; // Generate ambient light color at 100%
+//		// ambient for light 2
+//		vec3 ambient2 = ambientStrength * light2Color * .1; // at 10%
 
 
 		// Calculat ediffuse lighting
 		vec3 norm = normalize(Normal); // Normalize vectors to 1 unit
 		vec3 lightDirection = normalize(lightPos - FragmentPos); // calculate distance (light direction) between light source and fragments/pixels on
 		float impact = max(dot(norm, lightDirection), 0.0); // Calcuate diffuse impact by generating dot product of normal and light
-		vec3 diffuse = impact * lightColor; // Generate diffuse light color
+		vec3 diffuse = impact * lightColor * 1; // Generate diffuse light color at 100%
+
+		// diffuse light2
+		vec3 light2Direction = normalize(light2Pos - FragmentPos);
+		float impact2 = max(dot(norm, light2Direction), 0.0f);
+		vec3 diffuse2 = impact2 * light2Color * .1;// at 10%
 
 
+		// Commented out for assignment as assignment does not show any specular lighting in the prompt.
 		// Calculate specular lighting
-		float specularIntensity = 0.8f; // Set specular light strength
-		float highlightSize = 16.0f; // Set specular highlight size
-		vec3 viewDir = normalize(viewPosition - FragmentPos); // Calclulate view direction
-		vec3 reflectDir = reflect(-lightDirection, norm); // Calculate reflection vector
-		// Calculate specular component
-		float specularComponent = pow(max(dot(viewDir, reflectDir), 0.0), highlightSize);
-		vec3 specular = specularIntensity * specularComponent * lightColor;
+//		float specularIntensity = 0.8f; // Set specular light strength
+//		float highlightSize = 16.0f; // Set specular highlight size
+//		vec3 viewDir = normalize(viewPosition - FragmentPos); // Calclulate view direction
+//		vec3 reflectDir = reflect(-lightDirection, norm); // Calculate reflection vector
+//		// Calculate specular component
+//		float specularComponent = pow(max(dot(viewDir, reflectDir), 0.0), highlightSize);
+//		vec3 specular = specularIntensity * specularComponent * lightColor;
 
 		// Calculating phong result
-		vec3 phong = (ambient + diffuse + specular) * objectColor;
+		vec3 phong = ( diffuse + diffuse2) * objectColor; // to add ambient, add in ambient and ambient2 and un-comment above.
 
 		cubeColor = vec4(phong, 1.0f); // Send lighting result to gpu
-	}
-);
-
-
-// Lamp shader source code
-const GLchar * lampVertexShaderSource = GLSL(330,
-
-	layout (location = 0 ) in vec3 position; //VAP position 0 for vertex position data
-
-	// Uniform/global vars for the transform matrices
-	uniform mat4 model;
-	uniform mat4 view;
-	uniform mat4 projection;
-
-	void main()
-	{
-		gl_Position = projection * view * model * vec4(position, 1.0f); // transform vertices into clip coordintaes
-	}
-);
-
-
-// Fragment shader source code
-const GLchar * lampFragmentShaderSource = GLSL(330,
-
-	out vec4 color; // For outgoing lamp color (smaller cupe) to the GPU
-
-	void main()
-	{
-		color = vec4(1.0f); // Set color to white (1.0f, 1.0f, 1.0f, with alpha 1.0)
-
 	}
 );
 
@@ -203,7 +188,7 @@ void URenderGraphics(void)
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //Clears screen
 
-	GLint modelLoc, viewLoc, projLoc, objectColorLoc, lightColorLoc, lightPositionLoc, viewPositionLoc;
+	GLint modelLoc, viewLoc, projLoc, objectColorLoc, lightColorLoc, lightPositionLoc, viewPositionLoc, light2ColorLoc, light2PositionLoc;
 
 	glm::mat4 model;
 	glm::mat4 view;
@@ -237,41 +222,22 @@ void URenderGraphics(void)
 	// Reference matrix uniforms forom the cube shader program for the cube color, light color, light pos and camera pos
 	objectColorLoc = glGetUniformLocation(cubeShaderProgram, "objectColor");
 	lightColorLoc = glGetUniformLocation(cubeShaderProgram, "lightColor");
+	light2ColorLoc = glGetUniformLocation(cubeShaderProgram, "light2Color");
 	lightPositionLoc = glGetUniformLocation(cubeShaderProgram, "lightPos");
+	light2PositionLoc = glGetUniformLocation(cubeShaderProgram, "light2Pos");
 	viewPositionLoc = glGetUniformLocation(cubeShaderProgram, "viewPosition");
 
 	// Pass color, light, and camera data to the cube shader program's corresponding uniforms
 	glUniform3f(objectColorLoc, objectColor.r, objectColor.g, objectColor.b);
 	glUniform3f(lightColorLoc, lightColor.r, lightColor.g, lightColor.b);
+	glUniform3f(light2ColorLoc, light2Color.r, light2Color.g, light2Color.b);
 	glUniform3f(lightPositionLoc, lightPosition.x, lightPosition.y, lightPosition.z);
-	glUniform3f(viewPositionLoc, cameraPosition.z, cameraPosition.y, cameraPosition.z);
+	glUniform3f(light2PositionLoc, light2Position.x, light2Position.y, light2Position.z);
+	glUniform3f(viewPositionLoc, cameraPosition.x, cameraPosition.y, cameraPosition.z);
 
 	glDrawArrays(GL_TRIANGLES, 0, 36); // Draw the primitives /cube
 
 	glBindVertexArray(0); // Deactivate the Cube Vertex Array object
-
-
-	// **** USE the lamp shader and activate the lamp vertex array obj for rendering
-	glUseProgram(lampShaderProgram);
-	glBindVertexArray(LightVAO);
-
-	// Transform the saller cube used as a visual que for the light source
-	model = glm::translate(model, lightPosition);
-	model = glm::scale(model, lightScale);
-
-	// Reference matrix uniforms from the Lamp Shader program
-	modelLoc = glGetUniformLocation(lampShaderProgram, "model");
-	viewLoc = glGetUniformLocation(lampShaderProgram, "view");
-	projLoc = glGetUniformLocation(lampShaderProgram, "projection");
-
-	// Pass matrix data to the lamp shader program's matrix unifroms
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-	glDrawArrays(GL_TRIANGLES, 0, 36); // Draw the primitives /small cube(lamp)
-
-	glBindVertexArray(0); // Cleamnup
 
 	glutPostRedisplay();
 	glutSwapBuffers();
@@ -302,28 +268,6 @@ void UCreateShader()
 	// Delete the vertex and fragment shaders once linked
 	glDeleteShader(cubeVertexShader);
 	glDeleteShader(cubeFragmentShader);
-
-
-	// lamp Vertex shader
-	GLint lampVertexShader = glCreateShader(GL_VERTEX_SHADER); //Creates the vertex shader
-	glShaderSource(lampVertexShader, 1, &lampVertexShaderSource, NULL); // attaches vert shader to source
-	glCompileShader(lampVertexShader); // Compiles the vertex shader
-
-	// lamp Fragment shader
-	GLint lampFragmentShader = glCreateShader(GL_FRAGMENT_SHADER); //create frag shader
-	glShaderSource(lampFragmentShader, 1, &lampFragmentShaderSource, NULL); //Attaches the frag shader to source
-	glCompileShader(lampFragmentShader); //compiles frag shader
-
-	// lamp Shader program
-	lampShaderProgram = glCreateProgram(); //Creates the shader program returns an id
-	glAttachShader(lampShaderProgram, lampVertexShader); //Attach vertex shader to shader prog
-	glAttachShader(lampShaderProgram, lampFragmentShader);
-	glLinkProgram(lampShaderProgram);
-
-	// Delete the vertex and fragment shaders once linked
-	glDeleteShader(lampVertexShader);
-	glDeleteShader(lampFragmentShader);
-
 }
 
 
@@ -334,53 +278,33 @@ void UCreateBuffers()
 	GLfloat vertices[] = {
 
 
-			//pos // color //texture coordinates
-			-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, -1.0f,
-			 0.5f, -0.5f, -0.5f,  0.0f, 0.0f, -1.0f,
-			 0.5f,  0.5f, -0.5f,  0.0f, 0.0f, -1.0f,
-			 0.5f,  0.5f, -0.5f,  0.0f, 0.0f, -1.0f,
-			-0.5f,  0.5f, -0.5f,  0.0f, 0.0f, -1.0f,
-			-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, -1.0f,
+			//pos // negative z normal
+			-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, -1.0f, // Back
+			 0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+			 0.0f,  0.75f, 0.0f, 0.0f, 0.0f, -1.0f,
 
-
-			-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f,
+			 // Pos z normal
+			-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f,// Front
 			 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f,
-			 0.5f,  0.5f,  0.5f,  0.0f, 0.0f,  1.0f,
-			 0.5f,  0.5f,  0.5f,  0.0f, 0.0f,  1.0f,
-			-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,  1.0f,
-			-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f,
+			 0.0f,  0.75f,  0.0f,  0.0f, 0.0f,  1.0f,
 
-
-			-0.5f,  0.5f,  0.5f,  -1.0f, 0.0f, 0.0f,
-			-0.5f,  0.5f, -0.5f,  -1.0f, 0.0f, 0.0f,
-			-0.5f, -0.5f, -0.5f,  -1.0f, 0.0f, 0.0f,
-			-0.5f, -0.5f, -0.5f,  -1.0f, 0.0f, 0.0f,
+			 // Neg X normal
+			-0.5f, -0.5f, -0.5f,  -1.0f, 0.0f, 0.0f, // Left
 			-0.5f, -0.5f,  0.5f,  -1.0f, 0.0f, 0.0f,
-			-0.5f,  0.5f,  0.5f,  -1.0f, 0.0f, 0.0f,
+			0.0f,  0.75f,  0.0f,  -1.0f, 0.0f, 0.0f,
 
-
-			0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f,
-			0.5f,  0.5f, -0.5f,  1.0f, 0.0f,  0.0f,
-			0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f,
-			0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f,
+			// Pos x normal
+			0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f, // Right
 			0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  0.0f,
-			0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f,
+			0.0f,  0.75f,  0.0f,  1.0f, 0.0f,  0.0f,
 
-
-			-0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f,
+			// - y notmal
+			-0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f,// Bottom of pyramid
 			 0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f,
 			 0.5f, -0.5f,  0.5f,  0.0f, -1.0f, 0.0f,
 			 0.5f, -0.5f,  0.5f,  0.0f, -1.0f, 0.0f,
 			-0.5f, -0.5f,  0.5f,  0.0f, -1.0f, 0.0f,
 			-0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f,
-
-
-			-0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
-			 0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
-			 0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
-		 	 0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
-			-0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
-			-0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f
 
 	};
 

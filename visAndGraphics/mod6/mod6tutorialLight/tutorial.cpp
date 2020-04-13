@@ -244,7 +244,7 @@ void URenderGraphics(void)
 	glUniform3f(objectColorLoc, objectColor.r, objectColor.g, objectColor.b);
 	glUniform3f(lightColorLoc, lightColor.r, lightColor.g, lightColor.b);
 	glUniform3f(lightPositionLoc, lightPosition.x, lightPosition.y, lightPosition.z);
-	glUniform3f(viewPositionLoc, cameraPosition.z, cameraPosition.y, cameraPosition.z);
+	glUniform3f(viewPositionLoc, cameraPosition.x, cameraPosition.y, cameraPosition.z);
 
 	glDrawArrays(GL_TRIANGLES, 0, 36); // Draw the primitives /cube
 
