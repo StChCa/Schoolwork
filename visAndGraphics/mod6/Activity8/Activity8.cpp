@@ -8,6 +8,8 @@
 #include <GL/glm/glm/gtc/matrix_transform.hpp>
 #include <GL/glm/glm/gtc/type_ptr.hpp>
 
+#include "SOIL2/SOIL2.h"
+
 using namespace std;
 
 #define WINDOW_TITLE "Modern OPENGL"
@@ -20,7 +22,7 @@ using namespace std;
 
 // Variable declarations for shadeer, window size buffer and array objects
 GLint cubeShaderProgram, lampShaderProgram, WindowWidth = 880, WindowHeight = 600;
-GLuint VBO, CubeVAO, LightVAO;
+GLuint VBO, CubeVAO, LightVAO, texture;
 
 // Subject position and scale
 glm::vec3 cubePosition(0.0f, -1.0f, 0.0f);
@@ -49,15 +51,18 @@ void UResizeWindow(int, int);
 void URenderGraphics(void);
 void UCreateShader(void);
 void UCreateBuffers(void);
+void UGenerateTextures(void);
 
 // CubeVertex shader source code
 const GLchar * cubeVertexShaderSource = GLSL(330,
 
 		layout (location = 0) in vec3 position; // VAP position 0 for vertex position data
 		layout (location = 1) in vec3 normal; // VAP position 1 for normals
+		layout (location = 2) in vec2 textureCoordinates;
 
 		out vec3 Normal; // For outgoing normals to gragmentshader
 		out vec3 FragmentPos; // For outgoing color/pixels to fragments ahdaer
+		out vec2 mobileTextureCoordniate;
 
 		// uniform / Global variables for the transofrm matrices
 		uniform mat4 model;
@@ -72,6 +77,8 @@ const GLchar * cubeVertexShaderSource = GLSL(330,
 
 		Normal = mat3(transpose(inverse(model))) * normal; // get normal vectors in world space only and exclude normal translation properties
 
+		mobileTextureCoordinate = vec2(textureCoordinates.x, 1.0f - textureCoordinates.y); //flips the texture
+
 	}
 );
 
@@ -81,8 +88,10 @@ const GLchar * cubeFragmentShaderSource = GLSL(330,
 
 		in vec3 Normal; // For incoming normals
 		in vec3 FragmentPos; /// for incoming fragment posiont
+		in vec2 mobileTextureCoordinate; // texture coordinates
 
-		out vec4 cubeColor; // for outgoing cube color to gpu
+		//out vec4 cubeColor; // for outgoing cube color to gpu
+		out vec4 gpuTexture; // Variable to pass color data to GPU
 
 		// uniform / global vars for object color, light color, light pos and camera/view pos
 		uniform vec3 objectColor;
@@ -91,6 +100,7 @@ const GLchar * cubeFragmentShaderSource = GLSL(330,
 		uniform vec3 lightPos;
 		uniform vec3 light2Pos;
 		uniform vec3 viewPosition;
+		uniform sampler2D uTexture; // Useful when working with multiple textures
 
 	void main(){
 
@@ -128,9 +138,12 @@ const GLchar * cubeFragmentShaderSource = GLSL(330,
 //		vec3 specular = specularIntensity * specularComponent * lightColor;
 
 		// Calculating phong result
-		vec3 phong = ( diffuse + diffuse2) * objectColor; // to add ambient, add in ambient and ambient2 and un-comment above.
+		vec3 phong = ( diffuse + diffuse2) * gpuTexture; // to add ambient, add in ambient and ambient2 and un-comment above.
 
-		cubeColor = vec4(phong, 1.0f); // Send lighting result to gpu
+		gpuTexture = vec4(phong, 1.0f); // Send lighting result to gpu
+
+		//gpuTexture = texture(uTexture + cubeColor, mobileTextureCoordinate); // Sends texture to the GPU
+
 	}
 );
 
@@ -156,6 +169,8 @@ int main(int argc, char* argv[])
 	UCreateShader();
 
 	UCreateBuffers();
+
+	UGenerateTextures();
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Sets the bg color to black
 
@@ -240,6 +255,7 @@ void URenderGraphics(void)
 	glBindVertexArray(0); // Deactivate the Cube Vertex Array object
 
 	glutPostRedisplay();
+
 	glutSwapBuffers();
 
 
@@ -278,33 +294,33 @@ void UCreateBuffers()
 	GLfloat vertices[] = {
 
 
-			//pos // negative z normal
-			-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, -1.0f, // Back
-			 0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-			 0.0f,  0.75f, 0.0f, 0.0f, 0.0f, -1.0f,
+			//pos x, y, z// Neg z normal // texture points
+			-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // Back
+			 0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f,
+			 0.0f,  0.75f, 0.0f, 0.0f, 0.0f, -1.0f, 0.5f, 0.75f,
 
 			 // Pos z normal
-			-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f,// Front
-			 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f,
-			 0.0f,  0.75f,  0.0f,  0.0f, 0.0f,  1.0f,
+			-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f, 0.0f, 0.0f, // Front
+			 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f, 1.0f, 0.0f,
+			 0.0f,  0.75f,  0.0f,  0.0f, 0.0f,  1.0f, 0.5f, 0.75f,
 
 			 // Neg X normal
-			-0.5f, -0.5f, -0.5f,  -1.0f, 0.0f, 0.0f, // Left
-			-0.5f, -0.5f,  0.5f,  -1.0f, 0.0f, 0.0f,
-			0.0f,  0.75f,  0.0f,  -1.0f, 0.0f, 0.0f,
+			-0.5f, -0.5f, -0.5f,  -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Left
+			-0.5f, -0.5f,  0.5f,  -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f,  0.75f,  0.0f,  -1.0f, 0.0f, 0.0f, 0.5f, 0.75f,
 
 			// Pos x normal
-			0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f, // Right
-			0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  0.0f,
-			0.0f,  0.75f,  0.0f,  1.0f, 0.0f,  0.0f,
+			0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f, 0.0f, 0.0f, // Right
+			0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 1.0f, 0.0f,
+			0.0f,  0.75f,  0.0f,  1.0f, 0.0f,  0.0f, 0.5f, 0.75f,
 
 			// - y notmal
-			-0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f,// Bottom of pyramid
-			 0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f,
-			 0.5f, -0.5f,  0.5f,  0.0f, -1.0f, 0.0f,
-			 0.5f, -0.5f,  0.5f,  0.0f, -1.0f, 0.0f,
-			-0.5f, -0.5f,  0.5f,  0.0f, -1.0f, 0.0f,
-			-0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f,
+			-0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // Bottom of pyramid
+			 0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f, 1.0f, 1.0f,
+			 0.5f, -0.5f,  0.5f,  0.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+			 0.5f, -0.5f,  0.5f,  0.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+			-0.5f, -0.5f,  0.5f,  0.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			-0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f, 0.0f, 1.0f,
 
 	};
 
@@ -321,11 +337,11 @@ void UCreateBuffers()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 	// Set attribute pointer 0 to hold position data
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0); // Enables vertex attribute
 
 	// set attribute pointer 2 to hold texture coordinate data
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
 
 	glBindVertexArray(0); // Deactivate VAO
@@ -343,4 +359,20 @@ void UCreateBuffers()
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 	glBindVertexArray(0);
+}
+
+// Generate and load the texture
+void UGenerateTextures(){
+
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	int width, height;
+
+	unsigned char* image = SOIL_load_image("snhu.jpg", &width, &height, 0, SOIL_LOAD_RGB); // Loads texture
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	SOIL_free_image_data(image);
+	glBindTexture(GL_TEXTURE_2D, 0); // unbind texture
 }
