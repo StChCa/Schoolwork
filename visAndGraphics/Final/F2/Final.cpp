@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <vector>
+#include <ctime>
 
 // math
 //GLM Math Header inclusions
@@ -37,7 +38,7 @@ glm::vec3 lightPosition(2.0f, 0.5f, -3.0f);
 glm::vec3 lightScale(0.3f);
 
 // camera position
-glm::vec3 cameraPosition(0.0f, 1.0f, -6.0f);
+glm::vec3 cameraPosition(0.0f, 0.0f, -6.0f);
 
 float cameraRotation = glm::radians(-25.0f);
 
@@ -98,7 +99,7 @@ const GLchar * fragmentShaderSource = GLSL(330,
 
 		//gpuTexture = texture(uTexture, mobileTextureCoordinate); // Sends texture to the GPU
 
-		float ambientStrength = 0.5f; // value to set strength of ambient
+		float ambientStrength = 0.4f; // value to set strength of ambient
 		vec3 ambient = ambientStrength * lightColor; // Apply the strength to the color
 
 		vec3 norm = normalize(Normal); // Normaliz to 1 unit
@@ -106,7 +107,7 @@ const GLchar * fragmentShaderSource = GLSL(330,
 		float impact = max(dot(norm, lightDirection), 0.0); // Calculate diffuse impact by generating dot product of normal light
 		vec3 diffuse = impact * lightColor; // Generate diffuse light color
 
-		float specularIntensity = 0.8f; // Set specular light strength
+		float specularIntensity = 0.3f; // Set specular light strength
 		float highlightSize = 128.0f; // Set specular highlight size
 		vec3 viewDir = normalize(viewPosition - FragmentPos); // Calculate view direction
 		vec3 reflectDir = reflect(-lightDirection, norm); // calculate reflection vector
@@ -152,6 +153,9 @@ const GLchar * lampFragmentShaderSource = GLSL(330,
 // main program
 int main(int argc, char* argv[])
 {
+	// Seed random number to allow for variability in textures
+	srand ( time(NULL) );
+
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowSize(WindowWidth, WindowHeight);
@@ -224,7 +228,7 @@ void URenderGraphics(void)
 	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f)); // Increase the size by scale 2
 
 	// Transforms the camera
-	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -5.0f)); // Moves the workd .5 units on x and -5 units in z
+	view = glm::translate(view, glm::vec3(0.0f, -2.0f, -5.0f)); // Moves the workd .5 units on x and -5 units in z
 
 	// Creates a perspective projection
 	projection = glm::perspective(45.0f, (GLfloat)WindowWidth / (GLfloat)WindowHeight, 0.1f, 100.0f);
@@ -345,19 +349,19 @@ void UCreateBuffers()
 	vector<GLfloat> verticesVec;
 
 
-	vector<GLfloat> lowerPanCircle = generateCircleVerts(0.9, 30, 0.0f, 0.0f, 0.0f);
+	vector<GLfloat> lowerPanCircle = generateCircleVerts(.85, 30, 0.0f, 0.0f, 0.0f);
 	vector<GLfloat> upperPanCircle = generateCircleVerts(1.1, 30, 0.0f, 0.0f, 0.3f);
 
 	drawConnectedCircles(lowerPanCircle, upperPanCircle, verticesVec);
 
 //	// Base of pan
-//	drawCircle(1, 30, 0.0f, 0.0f, 0.0f, verticesVec);
+	drawCircle(.85, 30, 0.0f, 0.0f, 0.0f, verticesVec);
 //	// Top of pan (opening)
 //	drawCircle(1.1, 30, 0.0f, 0.0f, 0.3f, verticesVec);
 	// base of handle
 	createEqualTriangle(0.6f, 0.0f, 1.3f, 0.3f, verticesVec);
 	// end of handle
-	createRectangle(0.25f, 1.75f, 0.0f, 1.0f, 0.3f, verticesVec);
+	createRectangle(0.25f, 0.75f, 0.0f, 1.75f, 0.3f, verticesVec);
 
 		// Convert vectors into arrays for drawing
 		GLfloat vertices[verticesVec.size()];
@@ -415,7 +419,7 @@ void UGenerateTexture(){
 
 	int width, height;
 
-	unsigned char* image = SOIL_load_image("snhu.jpg", &width, &height, 0, SOIL_LOAD_RGB); // Loads texture
+	unsigned char* image = SOIL_load_image("gold7.jpg", &width, &height, 0, SOIL_LOAD_RGB); // Loads texture
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -435,8 +439,8 @@ void createRectangle(float xSide, float ySide, float x, float y, float z, vector
 	verts.push_back(0.0f);
 	verts.push_back(1.0f);
 	// texture
-	verts.push_back(0.0f);
-	verts.push_back(0.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
 
 
 	// Point2 of triangle
@@ -448,8 +452,8 @@ void createRectangle(float xSide, float ySide, float x, float y, float z, vector
 	verts.push_back(0.0f);
 	verts.push_back(1.0f);
 	// texture
-	verts.push_back(0.0f);
-	verts.push_back(1.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
 
 	// Point 3 of triangle
 	verts.push_back( (-xSide/2.0f) + x);
@@ -460,8 +464,8 @@ void createRectangle(float xSide, float ySide, float x, float y, float z, vector
 	verts.push_back(0.0f);
 	verts.push_back(1.0f);
 	// texture
-	verts.push_back(1.0f);
-	verts.push_back(1.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
 
 
 	// Draw triagnle 2
@@ -473,8 +477,8 @@ void createRectangle(float xSide, float ySide, float x, float y, float z, vector
 	verts.push_back(0.0f);
 	verts.push_back(1.0f);
 	// texture
-	verts.push_back(0.0f);
-	verts.push_back(0.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
 
 
 	// Point2 of triangle
@@ -486,8 +490,8 @@ void createRectangle(float xSide, float ySide, float x, float y, float z, vector
 	verts.push_back(0.0f);
 	verts.push_back(1.0f);
 	// texture
-	verts.push_back(0.0f);
-	verts.push_back(1.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
 
 	// Point 3 of triangle
 	verts.push_back( (xSide/2.0f) + x);
@@ -498,8 +502,8 @@ void createRectangle(float xSide, float ySide, float x, float y, float z, vector
 	verts.push_back(0.0f);
 	verts.push_back(1.0f);
 	// texture
-	verts.push_back(1.0f);
-	verts.push_back(1.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
 
 }
 
@@ -514,8 +518,8 @@ void createEqualTriangle(float size, float x, float y, float z, vector<GLfloat>&
 	verts.push_back(0.0f);
 	verts.push_back(1.0f);
 	// texture
-	verts.push_back(0.0f);
-	verts.push_back(0.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
 
 
 	// Point2 of triangle
@@ -527,8 +531,8 @@ void createEqualTriangle(float size, float x, float y, float z, vector<GLfloat>&
 	verts.push_back(0.0f);
 	verts.push_back(1.0f);
 	// texture
-	verts.push_back(0.0f);
-	verts.push_back(1.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
 
 	// Point 3 of triangle
 	verts.push_back( (-size/2.0f) + x);
@@ -539,8 +543,8 @@ void createEqualTriangle(float size, float x, float y, float z, vector<GLfloat>&
 	verts.push_back(0.0f);
 	verts.push_back(1.0f);
 	// texture
-	verts.push_back(1.0f);
-	verts.push_back(1.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
 }
 
 void drawCircle(float radius, int numPoints, GLfloat centX, GLfloat centY, GLfloat centZ, vector<GLfloat>& verts){
@@ -591,8 +595,8 @@ void drawCircle(float radius, int numPoints, GLfloat centX, GLfloat centY, GLflo
 		verts.push_back(0.0f);
 		verts.push_back(1.0f);
 		// texture
-		verts.push_back(0.0f);
-		verts.push_back(0.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
 
 		// Add a point for the i-1 point
 		verts.push_back(cos(pt1Rad) * radius);
@@ -603,8 +607,8 @@ void drawCircle(float radius, int numPoints, GLfloat centX, GLfloat centY, GLflo
 		verts.push_back(0.0f);
 		verts.push_back(1.0f);
 		// texture
-		verts.push_back(0.0f);
-		verts.push_back(1.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
 
 		// Add a point for this current point
 		verts.push_back(cos(pt2Rad) * radius);
@@ -615,8 +619,8 @@ void drawCircle(float radius, int numPoints, GLfloat centX, GLfloat centY, GLflo
 		verts.push_back(0.0f);
 		verts.push_back(1.0f);
 		// texture
-		verts.push_back(1.0f);
-		verts.push_back(1.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
 	}
 }
 
@@ -664,8 +668,8 @@ void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, vector<GLfloat
 		verts.push_back(0.0f);
 		verts.push_back(1.0f);
 		// texture
-		verts.push_back(0.0f);
-		verts.push_back(1.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
 
 		// pt2 (c1[i+1]
 		verts.push_back(c1[next]); //x
@@ -676,8 +680,8 @@ void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, vector<GLfloat
 		verts.push_back(0.0f);
 		verts.push_back(1.0f);
 		// texture
-		verts.push_back(0.0f);
-		verts.push_back(1.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
 
 		// pt3 (c2[i])
 		verts.push_back(c2[current]); //x
@@ -688,8 +692,8 @@ void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, vector<GLfloat
 		verts.push_back(0.0f);
 		verts.push_back(1.0f);
 		// texture
-		verts.push_back(0.0f);
-		verts.push_back(1.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
 
 
 		// Triangle 2
@@ -702,8 +706,8 @@ void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, vector<GLfloat
 		verts.push_back(0.0f);
 		verts.push_back(1.0f);
 		// texture
-		verts.push_back(0.0f);
-		verts.push_back(1.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
 
 		// c2[i+1]
 		verts.push_back(c2[next]); //x
@@ -714,19 +718,19 @@ void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, vector<GLfloat
 		verts.push_back(0.0f);
 		verts.push_back(1.0f);
 		// texture
-		verts.push_back(0.0f);
-		verts.push_back(1.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
 
 		// pt3 (c1[i+1])
-		verts.push_back(c1[current]); //x
-		verts.push_back(c1[current+1]); //y
-		verts.push_back(c1[current+2]); //z
+		verts.push_back(c1[next]); //x
+		verts.push_back(c1[next+1]); //y
+		verts.push_back(c1[next+2]); //z
 		// normals
 		verts.push_back(0.0f);
 		verts.push_back(0.0f);
 		verts.push_back(1.0f);
 		// texture
-		verts.push_back(0.0f);
-		verts.push_back(1.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
+		verts.push_back((float)(rand() % 100) / 100.0f);
 	}
 }
