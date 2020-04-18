@@ -49,6 +49,7 @@ void UCreateBuffers(void);
 void UGenerateTexture(void);
 void drawCircle(float, int, GLfloat, GLfloat, GLfloat, vector<GLfloat>&);
 vector<GLfloat> generateCircleVerts(float, int, GLfloat, GLfloat, GLfloat);
+void drawConnectedCircles(vector<GLfloat>, vector<GLfloat>, vector<GLfloat>&);
 void createEqualTriangle(float, float, float, float, vector<GLfloat>&);
 void createRectangle(float, float, float, float, float, vector<GLfloat>&);
 
@@ -248,7 +249,7 @@ void URenderGraphics(void)
 	uTextureLoc = glGetUniformLocation( shaderProgram, "uTexture");
 	glUniform1i(uTextureLoc, 0);
 
-	glDrawArrays(GL_TRIANGLES, 0, 1000);
+	glDrawArrays(GL_TRIANGLES, 0, 10000);
 
 	glBindVertexArray(0);
 
@@ -270,7 +271,7 @@ void URenderGraphics(void)
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
-	glDrawArrays(GL_TRIANGLES, 0, 1000);
+	glDrawArrays(GL_TRIANGLES, 0, 10000);
 
 	glBindVertexArray(0);
 
@@ -343,10 +344,16 @@ void UCreateBuffers()
 	// Position and Color data
 	vector<GLfloat> verticesVec;
 
-	// Base of pan
-	drawCircle(1, 30, 0.0f, 0.0f, 0.0f, verticesVec);
-	// Top of pan (opening)
-	drawCircle(1.1, 30, 0.0f, 0.0f, 0.3f, verticesVec);
+
+	vector<GLfloat> lowerPanCircle = generateCircleVerts(0.9, 30, 0.0f, 0.0f, 0.0f);
+	vector<GLfloat> upperPanCircle = generateCircleVerts(1.1, 30, 0.0f, 0.0f, 0.3f);
+
+	drawConnectedCircles(lowerPanCircle, upperPanCircle, verticesVec);
+
+//	// Base of pan
+//	drawCircle(1, 30, 0.0f, 0.0f, 0.0f, verticesVec);
+//	// Top of pan (opening)
+//	drawCircle(1.1, 30, 0.0f, 0.0f, 0.3f, verticesVec);
 	// base of handle
 	createEqualTriangle(0.6f, 0.0f, 1.3f, 0.3f, verticesVec);
 	// end of handle
@@ -634,4 +641,92 @@ vector<GLfloat> generateCircleVerts(float radius, int numPoints, GLfloat centX, 
 	}
 
 	return circle;
+}
+
+// Connect the exterior points of 2 circles
+void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, vector<GLfloat>& verts){
+
+	// we need to alternate drawing points on c1 and c2 like this
+	// draw triangle of points c1[0], c1[1], c2[0]
+	// then c2[0], c2[1], c1[1]
+	// we will use modulous to make sure we don't go over max number of verts
+
+	for ( unsigned int i = 0; i < c1.size(); i+=3 ){
+		//Triangle 1
+		// pt1 (c1[i])
+		int current = i;
+		int next = (i+3)%c1.size();
+		verts.push_back(c1[current]); //x
+		verts.push_back(c1[current+1]); //y
+		verts.push_back(c1[current+2]); //z
+		// normals
+		verts.push_back(0.0f);
+		verts.push_back(0.0f);
+		verts.push_back(1.0f);
+		// texture
+		verts.push_back(0.0f);
+		verts.push_back(1.0f);
+
+		// pt2 (c1[i+1]
+		verts.push_back(c1[next]); //x
+		verts.push_back(c1[next+1]); //y
+		verts.push_back(c1[next+2]); //z
+		// normals
+		verts.push_back(0.0f);
+		verts.push_back(0.0f);
+		verts.push_back(1.0f);
+		// texture
+		verts.push_back(0.0f);
+		verts.push_back(1.0f);
+
+		// pt3 (c2[i])
+		verts.push_back(c2[current]); //x
+		verts.push_back(c2[current+1]); //y
+		verts.push_back(c2[current+2]); //z
+		// normals
+		verts.push_back(0.0f);
+		verts.push_back(0.0f);
+		verts.push_back(1.0f);
+		// texture
+		verts.push_back(0.0f);
+		verts.push_back(1.0f);
+
+
+		// Triangle 2
+		//c2[i]
+		verts.push_back(c2[current]); //x
+		verts.push_back(c2[current+1]); //y
+		verts.push_back(c2[current+2]); //z
+		// normals
+		verts.push_back(0.0f);
+		verts.push_back(0.0f);
+		verts.push_back(1.0f);
+		// texture
+		verts.push_back(0.0f);
+		verts.push_back(1.0f);
+
+		// c2[i+1]
+		verts.push_back(c2[next]); //x
+		verts.push_back(c2[next+1]); //y
+		verts.push_back(c2[next+2]); //z
+		// normals
+		verts.push_back(0.0f);
+		verts.push_back(0.0f);
+		verts.push_back(1.0f);
+		// texture
+		verts.push_back(0.0f);
+		verts.push_back(1.0f);
+
+		// pt3 (c1[i+1])
+		verts.push_back(c1[current]); //x
+		verts.push_back(c1[current+1]); //y
+		verts.push_back(c1[current+2]); //z
+		// normals
+		verts.push_back(0.0f);
+		verts.push_back(0.0f);
+		verts.push_back(1.0f);
+		// texture
+		verts.push_back(0.0f);
+		verts.push_back(1.0f);
+	}
 }
