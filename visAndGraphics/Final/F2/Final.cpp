@@ -2,6 +2,7 @@
 #include <iostream>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
+#include <vector>
 
 // math
 //GLM Math Header inclusions
@@ -27,7 +28,7 @@ GLuint VBO, VAO, lightVAO, texture;
 GLfloat degrees = glm::radians(-45.0f); // Converts float to degrees
 
 glm::vec3 pyramidPosition(0.0f, 0.0f, 0.0f);
-glm::vec3 pyramidScale(2.0f);
+glm::vec3 pyramidScale(1.0f);
 
 glm::vec3 objectColor(1.0f, 1.0f, 1.0f);
 glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
@@ -36,7 +37,7 @@ glm::vec3 lightPosition(2.0f, 0.5f, -3.0f);
 glm::vec3 lightScale(0.3f);
 
 // camera position
-glm::vec3 cameraPosition(0.0f, 0.0f, -6.0f);
+glm::vec3 cameraPosition(0.0f, 1.0f, -6.0f);
 
 float cameraRotation = glm::radians(-25.0f);
 
@@ -46,6 +47,10 @@ void URenderGraphics(void);
 void UCreateShader(void);
 void UCreateBuffers(void);
 void UGenerateTexture(void);
+void drawCircle(float, int, GLfloat, GLfloat, GLfloat, vector<GLfloat>&);
+vector<GLfloat> generateCircleVerts(float, int, GLfloat, GLfloat, GLfloat);
+void createEqualTriangle(float, float, float, float, vector<GLfloat>&);
+void createRectangle(float, float, float, float, float, vector<GLfloat>&);
 
 
 // Vertex shader source code
@@ -243,7 +248,7 @@ void URenderGraphics(void)
 	uTextureLoc = glGetUniformLocation( shaderProgram, "uTexture");
 	glUniform1i(uTextureLoc, 0);
 
-	glDrawArrays(GL_TRIANGLES, 0, 18);
+	glDrawArrays(GL_TRIANGLES, 0, 1000);
 
 	glBindVertexArray(0);
 
@@ -265,7 +270,7 @@ void URenderGraphics(void)
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
-	glDrawArrays(GL_TRIANGLES, 0, 18);
+	glDrawArrays(GL_TRIANGLES, 0, 1000);
 
 	glBindVertexArray(0);
 
@@ -333,32 +338,25 @@ void UCreateShader()
 void UCreateBuffers()
 {
 
-	GLfloat vertices[] = {
-			//x ,y ,z // normals //texture coordinates
-			-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  0.0f, 0.0f, // Back right
-			 0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  1.0f, 0.0f,
-			 0.0f,  0.75f, 0.0f, 0.0f, 0.0f, -1.0f,  0.5f, 0.75f,
 
 
-			-0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // Front Left
-			 0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,
-			 0.0f,  0.75f,  0.0f, 0.0f, 0.0f, 1.0f, 0.5f, 0.75f,
+	// Position and Color data
+	vector<GLfloat> verticesVec;
 
-			-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Back Left
-			-0.5f, -0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f,  0.75f,  0.0f, -1.0f, 0.0f, 0.0f, 0.5f, 0.75,
+	// Base of pan
+	drawCircle(1, 30, 0.0f, 0.0f, 0.0f, verticesVec);
+	// Top of pan (opening)
+	drawCircle(1.1, 30, 0.0f, 0.0f, 0.3f, verticesVec);
+	// base of handle
+	createEqualTriangle(0.6f, 0.0f, 1.3f, 0.3f, verticesVec);
+	// end of handle
+	createRectangle(0.25f, 1.75f, 0.0f, 1.0f, 0.3f, verticesVec);
 
-			0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Frong Rgith
-			0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f,  0.75f,  0.0f, 1.0f, 0.0f, 0.0f, 0.5f, 0.75f,
-
-			-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // Bottom of pyramid
-			 0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f,
-			 0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-			 0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-			-0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-			-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f,
-	};
+		// Convert vectors into arrays for drawing
+		GLfloat vertices[verticesVec.size()];
+		for (unsigned int i = 0; i < verticesVec.size(); i++){
+			vertices[i] = verticesVec[i];
+		}
 
 	// Generate buffer ids
 	glGenVertexArrays(1, &VAO);
@@ -416,4 +414,224 @@ void UGenerateTexture(){
 	glGenerateMipmap(GL_TEXTURE_2D);
 	SOIL_free_image_data(image);
 	glBindTexture(GL_TEXTURE_2D, 0); // unbind texture
+}
+
+void createRectangle(float xSide, float ySide, float x, float y, float z, vector<GLfloat>& verts){
+	// It will take 2 triangles to draw this rectangle
+
+	// Draw triagnle 1
+	verts.push_back( (xSide/2.0f) + x);
+	verts.push_back( (ySide/2.0f) + y);
+	verts.push_back(z);
+	// Normals
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+	verts.push_back(1.0f);
+	// texture
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+
+
+	// Point2 of triangle
+	verts.push_back( (-xSide/2.0f) + x);
+	verts.push_back( (ySide/2.0f) + y);
+	verts.push_back(z);
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+	verts.push_back(1.0f);
+	// texture
+	verts.push_back(0.0f);
+	verts.push_back(1.0f);
+
+	// Point 3 of triangle
+	verts.push_back( (-xSide/2.0f) + x);
+	verts.push_back( (-ySide/2.0f) + y);
+	verts.push_back(z);
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+	verts.push_back(1.0f);
+	// texture
+	verts.push_back(1.0f);
+	verts.push_back(1.0f);
+
+
+	// Draw triagnle 2
+	verts.push_back( (-xSide/2.0f) + x);
+	verts.push_back( (-ySide/2.0f) + y);
+	verts.push_back(z);
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+	verts.push_back(1.0f);
+	// texture
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+
+
+	// Point2 of triangle
+	verts.push_back( (xSide/2.0f) + x);
+	verts.push_back( (-ySide/2.0f) + y);
+	verts.push_back(z);
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+	verts.push_back(1.0f);
+	// texture
+	verts.push_back(0.0f);
+	verts.push_back(1.0f);
+
+	// Point 3 of triangle
+	verts.push_back( (xSide/2.0f) + x);
+	verts.push_back( (ySide/2.0f) + y);
+	verts.push_back(z);
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+	verts.push_back(1.0f);
+	// texture
+	verts.push_back(1.0f);
+	verts.push_back(1.0f);
+
+}
+
+void createEqualTriangle(float size, float x, float y, float z, vector<GLfloat>& verts){
+
+	// Point 1 of triangle
+	verts.push_back(0.0f + x);
+	verts.push_back( (size/2.0f) + y);
+	verts.push_back(z);
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+	verts.push_back(1.0f);
+	// texture
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+
+
+	// Point2 of triangle
+	verts.push_back( (size/2.0f) + x);
+	verts.push_back( (-size/2.0f) + y);
+	verts.push_back(z);
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+	verts.push_back(1.0f);
+	// texture
+	verts.push_back(0.0f);
+	verts.push_back(1.0f);
+
+	// Point 3 of triangle
+	verts.push_back( (-size/2.0f) + x);
+	verts.push_back( (-size/2.0f) + y);
+	verts.push_back(z);
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+	verts.push_back(1.0f);
+	// texture
+	verts.push_back(1.0f);
+	verts.push_back(1.0f);
+}
+
+void drawCircle(float radius, int numPoints, GLfloat centX, GLfloat centY, GLfloat centZ, vector<GLfloat>& verts){
+
+	float theta = 360.0f / (float)numPoints;
+
+//	// Push a point for the center point @ prevSize + 0
+//	verts.push_back(centX);
+//	verts.push_back(centY);
+//	verts.push_back(centZ);
+//	// Color info
+//	verts.push_back(1.0f);
+//	verts.push_back(0.0f);
+//	verts.push_back(0.0f);
+//
+//	// Generate points on the circle using basic trig
+//	for (int i = 0; i < numPoints; i++){
+//		// get degrees (theta) for current point
+//		float deg = theta * i;
+//
+//		verts.push_back(cos(deg) * radius);
+//		verts.push_back(sin(deg) * radius);
+//		verts.push_back(centZ);
+//		verts.push_back(1.0f);
+//		verts.push_back(0.0f);
+//		verts.push_back(0.0f);
+//
+//	}
+
+	// for each triangle we will draw (num points = num triangles
+	for (int i = 1; i < numPoints+1; i++){
+
+		float pt1Deg = theta * (i-1);
+		float pt2Deg = theta * i;
+
+		float pt1Rad = pt1Deg * (3.141592653589793238463/180.0);
+		float pt2Rad = pt2Deg * (3.141592653589793238463/180.0);
+
+		cout << i << " pt1Rad " << pt1Rad<<endl;
+		cout << i << " pt2Rad " << pt2Rad << endl << endl;
+
+		// Add center point to this triangle
+		verts.push_back(centX);
+		verts.push_back(centY);
+		verts.push_back(centZ);
+		// normals
+		verts.push_back(0.0f);
+		verts.push_back(0.0f);
+		verts.push_back(1.0f);
+		// texture
+		verts.push_back(0.0f);
+		verts.push_back(0.0f);
+
+		// Add a point for the i-1 point
+		verts.push_back(cos(pt1Rad) * radius);
+		verts.push_back(sin(pt1Rad) * radius);
+		verts.push_back(centZ);
+		// normals
+		verts.push_back(0.0f);
+		verts.push_back(0.0f);
+		verts.push_back(1.0f);
+		// texture
+		verts.push_back(0.0f);
+		verts.push_back(1.0f);
+
+		// Add a point for this current point
+		verts.push_back(cos(pt2Rad) * radius);
+		verts.push_back(sin(pt2Rad) * radius);
+		verts.push_back(centZ);
+		// normals
+		verts.push_back(0.0f);
+		verts.push_back(0.0f);
+		verts.push_back(1.0f);
+		// texture
+		verts.push_back(1.0f);
+		verts.push_back(1.0f);
+	}
+}
+
+// Generate a circle and return the vector of points on the circle
+vector<GLfloat> generateCircleVerts(float radius, int numPoints, GLfloat centX, GLfloat centY, GLfloat centZ){
+
+	// vector data to return
+	vector<GLfloat> circle;
+
+	float theta = 360.0f / (float)numPoints;
+
+	for (int i = 1; i < numPoints+1; i++){
+
+		float pt1Deg = theta * (i-1);
+
+		float pt1Rad = pt1Deg * (3.141592653589793238463/180.0);
+
+		// Add a point for the i-1 point
+		circle.push_back(cos(pt1Rad) * radius);
+		circle.push_back(sin(pt1Rad) * radius);
+		circle.push_back(centZ);
+	}
+
+	return circle;
 }
