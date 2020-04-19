@@ -20,31 +20,25 @@ using namespace std;
 #define GLSL(Version, Source) "#version " #Version "\n" #Source
 #endif
 
-// Variable declarations for shadeer, window size buffer and array objects
-GLint shaderProgram, lampShaderProgram, WindowWidth = 880, WindowHeight = 600;
-GLuint VBO, VAO, lightVAO, texture;
+// Variable declarations
+GLint shaderProgram, lampShaderProgram;
+GLint WindowWidth = 880, WindowHeight = 600; // window sizes
+GLuint VBO, VAO, lightVAO, texture; // vertex objects and texture
 GLfloat degrees = glm::radians(-45.0f); // Converts float to degrees
-
 GLfloat lastMouseX = 400, lastMouseY = 300; // Locks mouse curser at the center of screen
 GLfloat mouseXOffset, mouseYOffset, yaw = 0.0f, pitch = 0.0f; // mouse offset, yaw and pitch vars
 GLfloat sensitivity = 0.01f; //Used for mouse/camera rotation sensitivity
 bool mouseDetected = true, rightClicked = false, leftClicked = false, autoRotate = true, orthoPerspective = false; // Initially true when mouse movement is detected
-
-//glm::vec3 pyramidPosition(0.0f, 0.0f, 0.0f);
-//glm::vec3 pyramidScale(1.0f);
-
+// Vector declarations
 glm::vec3 objectColor(1.0f, 1.0f, 1.0f);
-glm::vec3 lightColor(1.0f, 0.5f, 0.5f);
-
+glm::vec3 lightColor(1.0f, 0.8f, 0.8f);
 glm::vec3 lightPosition(5.0f, 2.0f, 5.0f);
 glm::vec3 lightScale(0.3f);
-
-// camera position
+// camera declarations
 glm::vec3 cameraPosition(0.0f, 0.0f, -0.0f);
 glm::vec3 CameraUpY = glm::vec3(0.0f, 1.0f, 0.0f); // Temporary y unit vector
 glm::vec3 CameraForwardZ = glm::vec3(0.0f, 0.0f, -10.0f); // Temp z unit vector
 glm::vec3 front; // Temp z unit vector for mouse
-
 float cameraRotation = glm::radians(-25.0f);
 
 // Function prototypes
@@ -53,18 +47,26 @@ void URenderGraphics(void);
 void UCreateShader(void);
 void UCreateBuffers(void);
 void UGenerateTexture(void);
-void drawCircle(float, int, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, vector<GLfloat>&);
-vector<GLfloat> generateCircleVerts(float, int, GLfloat, GLfloat, GLfloat);
-void drawConnectedCircles(vector<GLfloat>, vector<GLfloat>, GLfloat, GLfloat, GLfloat, vector<GLfloat>&);
-void createEqualTriangle(float, float, float, float, vector<GLfloat>&);
-void createRectangle(float, float, float, float, float, vector<GLfloat>&);
-vector<GLfloat> generateOffsetVec(vector<GLfloat>);
-void createHandle(vector<GLfloat>&);
+
+// Mouse and camera movement prototypes
 void orbit(int x, int y);
 void UMouseMove(int x, int y);
 void UMouseEntryFunc(int);
-void UMouseClick(int button, int state, int x, int y);
+void UKeyboard(unsigned char key, int x, int y);
+void UKeyReleased(unsigned char key, int x, int y);
+void toggleOrtho();
 
+// Drawing and shaping prototypes
+void drawCircle(float, int, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, vector<GLfloat>&);
+void drawConnectedCircles(vector<GLfloat>, vector<GLfloat>, GLfloat, GLfloat, GLfloat, vector<GLfloat>&);
+void createEqualTriangle(float, float, float, float, float, vector<GLfloat>&);
+void createEdgesOfTriangle(vector<GLfloat>&);
+void createRectangleZ(float, float, float, float, float, float, vector<GLfloat>&);
+void createRectangleY(float, float, float, float, float, float, vector<GLfloat>&);
+void createRectangleX(float, float, float, float, float, float, vector<GLfloat>&);
+vector<GLfloat> generateCircleVerts(float, int, GLfloat, GLfloat, GLfloat);
+vector<GLfloat> generateOffsetVec(vector<GLfloat>);
+void createHandle(vector<GLfloat>&);
 
 // Vertex shader source code
 const GLchar * vertexShaderSource = GLSL(330,
@@ -198,7 +200,8 @@ int main(int argc, char* argv[])
 	// Keyboard / mouse functions
 	glutPassiveMotionFunc(UMouseMove);
 	glutEntryFunc(UMouseEntryFunc);
-	glutMouseFunc(UMouseClick);
+	glutKeyboardFunc(UKeyboard); // Detects key press
+	glutKeyboardUpFunc(UKeyReleased); // Detects key release
 
 	glutMainLoop();
 
@@ -379,16 +382,17 @@ void UCreateBuffers()
 	drawConnectedCircles(lowerPanCircle, upperPanCircle, 0.0f, 0.0f, 1.0f, verticesVec);
 	drawConnectedCircles(bottomLowerPanCircle, upperPanCircle, 0.0f, 0.0f, -1.0f, verticesVec);
 
-//	// Base of pan
+	//	// Base of pan
 	drawCircle(.85, 30, 0.0f, 0.0f, -0.1f, 0.0f, 0.0f, -1.0f, verticesVec);
 	drawCircle(.85, 30, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, verticesVec);
-//	// Top of pan (opening)
-//	drawCircle(1.1, 30, 0.0f, 0.0f, 0.3f, verticesVec);
-	// base of handle
-	createEqualTriangle(0.6f, 0.0f, 1.3f, 0.3f, verticesVec);
-	createEqualTriangle(0.6f, 0.0f, 1.3f, 0.25f, verticesVec);
+
 	// end of handle
 	createHandle(verticesVec);
+
+	// base of handle
+	createEqualTriangle(0.6f, 0.0f, 1.3f, 0.3f, 1.0f, verticesVec);
+	createEqualTriangle(0.6f, 0.0f, 1.3f, 0.21f, -1.0f, verticesVec);
+	createEdgesOfTriangle(verticesVec);
 
 	// Create a second copy of verticesVec. Offset it in the Z by a few px and draw all the connecting poinst
 	//vector<GLfloat> offsetVec = generateOffsetVec(verticesVec);
@@ -450,11 +454,12 @@ void UCreateBuffers()
 }
 
 void createHandle(vector<GLfloat>& verts){
-	createRectangle(0.25f, 0.75f, 0.0f, 1.75f, 0.3f, verts);
-	createRectangle(0.25f, 0.75f, 0.0f, 1.75f, 0.25f, verts);
-	createRectangle(0.25f, 0.75f, 0.0f, 1.75f, 0.3f, verts);
-	createRectangle(0.25f, 0.75f, 0.0f, 1.75f, 0.3f, verts);
-	createRectangle(0.25f, 0.75f, 0.0f, 1.75f, 0.3f, verts);
+	//				L1,     l2,    x,    y,     z,    normal, verts
+	createRectangleZ(0.25f, 0.75f, 0.0f, 1.75f, 0.3f, 1.0f, verts);
+	createRectangleZ(0.25f, 0.75f, 0.0f, 1.75f, 0.2f, -1.0f, verts);
+	createRectangleX(0.75f, 0.10f, 0.125f, 1.75f, 0.25f, 1.0f, verts);
+	createRectangleX(0.75f, 0.10f, -0.125f, 1.75f, 0.25f, -1.0f, verts);
+	createRectangleY(0.25f, 0.10f, 0.0f, 2.125f, .25f, -1.0f, verts);
 }
 
 vector<GLfloat> generateOffsetVec(vector<GLfloat> inVec){
@@ -488,7 +493,8 @@ void UGenerateTexture(){
 	glBindTexture(GL_TEXTURE_2D, 0); // unbind texture
 }
 
-void createRectangle(float xSide, float ySide, float x, float y, float z, vector<GLfloat>& verts){
+
+void createRectangleZ(float xSide, float ySide, float x, float y, float z, float norm, vector<GLfloat>& verts){
 	// It will take 2 triangles to draw this rectangle
 
 	// Draw triagnle 1
@@ -498,7 +504,7 @@ void createRectangle(float xSide, float ySide, float x, float y, float z, vector
 	// Normals
 	verts.push_back(0.0f);
 	verts.push_back(0.0f);
-	verts.push_back(1.0f);
+	verts.push_back(1.0f * norm);
 	// texture
 	verts.push_back((float)(rand() % 100) / 100.0f);
 	verts.push_back((float)(rand() % 100) / 100.0f);
@@ -511,7 +517,7 @@ void createRectangle(float xSide, float ySide, float x, float y, float z, vector
 	// normals
 	verts.push_back(0.0f);
 	verts.push_back(0.0f);
-	verts.push_back(1.0f);
+	verts.push_back(1.0f * norm);
 	// texture
 	verts.push_back((float)(rand() % 100) / 100.0f);
 	verts.push_back((float)(rand() % 100) / 100.0f);
@@ -523,7 +529,7 @@ void createRectangle(float xSide, float ySide, float x, float y, float z, vector
 	// normals
 	verts.push_back(0.0f);
 	verts.push_back(0.0f);
-	verts.push_back(1.0f);
+	verts.push_back(1.0f * norm);
 	// texture
 	verts.push_back((float)(rand() % 100) / 100.0f);
 	verts.push_back((float)(rand() % 100) / 100.0f);
@@ -536,7 +542,7 @@ void createRectangle(float xSide, float ySide, float x, float y, float z, vector
 	// normals
 	verts.push_back(0.0f);
 	verts.push_back(0.0f);
-	verts.push_back(1.0f);
+	verts.push_back(1.0f * norm);
 	// texture
 	verts.push_back((float)(rand() % 100) / 100.0f);
 	verts.push_back((float)(rand() % 100) / 100.0f);
@@ -549,7 +555,7 @@ void createRectangle(float xSide, float ySide, float x, float y, float z, vector
 	// normals
 	verts.push_back(0.0f);
 	verts.push_back(0.0f);
-	verts.push_back(1.0f);
+	verts.push_back(1.0f * norm);
 	// texture
 	verts.push_back((float)(rand() % 100) / 100.0f);
 	verts.push_back((float)(rand() % 100) / 100.0f);
@@ -561,14 +567,173 @@ void createRectangle(float xSide, float ySide, float x, float y, float z, vector
 	// normals
 	verts.push_back(0.0f);
 	verts.push_back(0.0f);
-	verts.push_back(1.0f);
+	verts.push_back(1.0f * norm);
 	// texture
 	verts.push_back((float)(rand() % 100) / 100.0f);
 	verts.push_back((float)(rand() % 100) / 100.0f);
 
 }
 
-void createEqualTriangle(float size, float x, float y, float z, vector<GLfloat>& verts){
+void createRectangleX(float ySide, float zSide, float x, float y, float z, float norm, vector<GLfloat>& verts){
+	// It will take 2 triangles to draw this rectangle
+
+	// Draw triagnle 1
+	verts.push_back(x);
+	verts.push_back( (ySide/2.0f) + y);
+	verts.push_back( (zSide/2.0f) + z);
+	// Normals
+	verts.push_back(1.0f * norm);
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+
+	// Point2 of triangle
+	verts.push_back(x);
+	verts.push_back( (ySide/2.0f) + y);
+	verts.push_back( (-zSide/2.0f) + z);
+	// normals
+	verts.push_back(1.0f * norm);
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	// Point 3 of triangle
+	verts.push_back(x);
+	verts.push_back( (-ySide/2.0f) + y);
+	verts.push_back( (-zSide/2.0f) +z);
+	// normals
+	verts.push_back(1.0f * norm);
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+
+	// Draw triagnle 2
+	verts.push_back(x);
+	verts.push_back( (-ySide/2.0f) + y);
+	verts.push_back( (-zSide/2.0f) + z);
+	// normals
+	verts.push_back(1.0f * norm);
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+
+	// Point2 of triangle
+	verts.push_back(x);
+	verts.push_back( (-ySide/2.0f) + y);
+	verts.push_back( (zSide/2.0f) + z);
+	// normals
+	verts.push_back(1.0f * norm);
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	// Point 3 of triangle
+	verts.push_back(x);
+	verts.push_back( (ySide/2.0f) + y);
+	verts.push_back( (zSide/2.0f) + z);
+	// normals
+	verts.push_back(1.0f * norm);
+	verts.push_back(0.0f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+}
+
+void createRectangleY(float xSide, float zSide, float x, float y, float z, float norm, vector<GLfloat>& verts){
+	// It will take 2 triangles to draw this rectangle
+
+	// Draw triagnle 1
+	verts.push_back( (xSide/2.0f) + x);
+	verts.push_back(y);
+	verts.push_back( (zSide/2.0f + z));
+	// Normals
+	verts.push_back(0.0f);
+	verts.push_back(1.0f * norm);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+
+	// Point2 of triangle
+	verts.push_back( (-xSide/2.0f) + x);
+	verts.push_back(y);
+	verts.push_back( (zSide/2.0f + z));
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(1.0f * norm);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	// Point 3 of triangle
+	verts.push_back( (-xSide/2.0f) + x);
+	verts.push_back(y);
+	verts.push_back( (-zSide/2.0f + z));
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(1.0f * norm);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+
+	// Draw triagnle 2
+	verts.push_back( (-xSide/2.0f) + x);
+	verts.push_back(y);
+	verts.push_back( (-zSide/2.0f + z));
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(1.0f * norm);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+
+	// Point2 of triangle
+	verts.push_back( (xSide/2.0f) + x);
+	verts.push_back(y);
+	verts.push_back( (-zSide/2.0f + z));
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(1.0f * norm);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	// Point 3 of triangle
+	verts.push_back( (xSide/2.0f) + x);
+	verts.push_back(y);
+	verts.push_back( (zSide/2.0f + z));
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(1.0f * norm);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+}
+void createEqualTriangle(float size, float x, float y, float z, float norm, vector<GLfloat>& verts){
 
 	// Point 1 of triangle
 	verts.push_back(0.0f + x);
@@ -577,7 +742,7 @@ void createEqualTriangle(float size, float x, float y, float z, vector<GLfloat>&
 	// normals
 	verts.push_back(0.0f);
 	verts.push_back(0.0f);
-	verts.push_back(1.0f);
+	verts.push_back(1.0f * norm);
 	// texture
 	verts.push_back((float)(rand() % 100) / 100.0f);
 	verts.push_back((float)(rand() % 100) / 100.0f);
@@ -590,7 +755,7 @@ void createEqualTriangle(float size, float x, float y, float z, vector<GLfloat>&
 	// normals
 	verts.push_back(0.0f);
 	verts.push_back(0.0f);
-	verts.push_back(1.0f);
+	verts.push_back(1.0f * norm);
 	// texture
 	verts.push_back((float)(rand() % 100) / 100.0f);
 	verts.push_back((float)(rand() % 100) / 100.0f);
@@ -602,10 +767,220 @@ void createEqualTriangle(float size, float x, float y, float z, vector<GLfloat>&
 	// normals
 	verts.push_back(0.0f);
 	verts.push_back(0.0f);
-	verts.push_back(1.0f);
+	verts.push_back(1.0f * norm);
 	// texture
 	verts.push_back((float)(rand() % 100) / 100.0f);
 	verts.push_back((float)(rand() % 100) / 100.0f);
+}
+
+void createEdgesOfTriangle(vector<GLfloat>& verts){
+
+	verts.push_back(0.0f);
+	verts.push_back(1.3f + 0.3f);
+	verts.push_back(0.3f);
+	//normals
+	verts.push_back(0.5f);
+	verts.push_back(0.5f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	verts.push_back(0.0f);
+	verts.push_back(1.3f + 0.3f);
+	verts.push_back(0.21f);
+	// normals
+	verts.push_back(0.5f);
+	verts.push_back(0.5f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	verts.push_back(0.3f);
+	verts.push_back(1.0f);
+	verts.push_back(0.3f);
+	// normals
+	verts.push_back(0.5f);
+	verts.push_back(0.5f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	//T2,
+	verts.push_back(0.3f);
+	verts.push_back(1.0f);
+	verts.push_back(0.3f);
+	// normals
+	verts.push_back(0.5f);
+	verts.push_back(0.5f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	verts.push_back(0.3f);
+	verts.push_back(0.98f);
+	verts.push_back(0.21f);
+	// normals
+	verts.push_back(0.5f);
+	verts.push_back(0.5f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	verts.push_back(0.0f);
+	verts.push_back(1.3f + 0.3f);
+	verts.push_back(0.21f);
+	// normals
+	verts.push_back(0.5f);
+	verts.push_back(0.5f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+
+	// Side 2
+	verts.push_back(0.0f);
+	verts.push_back(1.3f + 0.3f);
+	verts.push_back(0.3f);
+	//normals
+	verts.push_back(-0.5f);
+	verts.push_back(0.5f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	verts.push_back(0.0f);
+	verts.push_back(1.3f + 0.3f);
+	verts.push_back(0.21f);
+	// normals
+	verts.push_back(-0.5f);
+	verts.push_back(0.5f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	verts.push_back(-0.3f);
+	verts.push_back(1.0f);
+	verts.push_back(0.3f);
+	// normals
+	verts.push_back(-0.5f);
+	verts.push_back(0.5f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	//T2,
+	verts.push_back(-0.3f);
+	verts.push_back(1.0f);
+	verts.push_back(0.3f);
+	// normals
+	verts.push_back(-0.5f);
+	verts.push_back(0.5f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	verts.push_back(-0.3f);
+	verts.push_back(0.98f);
+	verts.push_back(0.21f);
+	// normals
+	verts.push_back(-0.5f);
+	verts.push_back(0.5f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	verts.push_back(0.0f);
+	verts.push_back(1.3f + 0.3f);
+	verts.push_back(0.21f);
+	// normals
+	verts.push_back(-0.5f);
+	verts.push_back(0.5f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+
+	// Create side 3
+	verts.push_back(-0.3f);
+	verts.push_back(1.0f);
+	verts.push_back(0.3f);
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(-1.0f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	verts.push_back(-0.3f);
+	verts.push_back(0.98f);
+	verts.push_back(0.21f);
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(-1.0f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	verts.push_back(0.3f);
+	verts.push_back(0.98f);
+	verts.push_back(0.21f);
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(-1.0f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	verts.push_back(0.3f);
+	verts.push_back(1.0f);
+	verts.push_back(0.3f);
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(-1.0f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	verts.push_back(0.3f);
+	verts.push_back(0.98f);
+	verts.push_back(0.21f);
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(-1.0f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+	verts.push_back(-0.3f);
+	verts.push_back(1.0f);
+	verts.push_back(0.3f);
+	// normals
+	verts.push_back(0.0f);
+	verts.push_back(-1.0f);
+	verts.push_back(0.0f);
+	// texture
+	verts.push_back((float)(rand() % 100) / 100.0f);
+	verts.push_back((float)(rand() % 100) / 100.0f);
+
+
+
 }
 
 void drawCircle(float radius, int numPoints, GLfloat centX, GLfloat centY, GLfloat centZ, GLfloat norm1, GLfloat norm2, GLfloat norm3, vector<GLfloat>& verts){
@@ -790,65 +1165,10 @@ void UMouseEntryFunc(int state){
 		autoRotate = false;
 		std::cout << "Entered" << endl;
 	}
-
-
-	bool toggle = true;
-	  static GLboolean s_usePerspective = GL_TRUE;
-
-	  // toggle the control variable if appropriate
-	  if (toggle)
-	    s_usePerspective = !s_usePerspective;
-
-	  // select the projection matrix and clear it out
-	  glMatrixMode(GL_PROJECTION);
-	  glLoadIdentity();
-
-	  // choose the appropriate projection based on the currently toggled mode
-	  if (s_usePerspective)
-	  {
-	    // set the perspective with the appropriate aspect ratio
-	    glFrustum(-1.0, 1.0, -1.0, 1.0, 5, 100);
-	  }
-	  else
-	  {
-	    // set up an orthographic projection with the same near clip plane
-	    glOrtho(-1.0, 1.0, -1.0, 1.0, 5, 100);
-	  }
-
-	  // select modelview matrix and clear it out
-	  glMatrixMode(GL_MODELVIEW);
-
-
-
-
-
 }
 
 void UMouseMove(int x, int y){
 	orbit(x, y);
-}
-
-void UMouseClick(int button, int state, int x, int y)
-{
-
-	if((button == GLUT_LEFT_BUTTON) && (state == GLUT_DOWN) ){
-
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-
-		if(!orthoPerspective){
-			std::cout << "set to ortho" << endl;
-			glOrtho(-1.0, 1.0, -1.0, 1.0, 1, 10);
-			orthoPerspective = true;
-		}else {
-			glFrustum(-1.0, 2.0, -1.0, 1.0, 5, 100);
-			orthoPerspective = false;
-			std::cout << "set to frustum" << endl;
-		}
-
-		glMatrixMode(GL_MODELVIEW);
-
-	}
 }
 
 void orbit(int x, int y){
@@ -884,4 +1204,39 @@ void orbit(int x, int y){
 		return;
 	}
 	front.y = 10.0f * sin(pitch);
+}
+
+void UKeyboard(unsigned char key, int x, int y){
+
+	switch(key){
+		case 'p':
+			toggleOrtho();
+			cout<<"P pressed, toggle ortho perspective" << endl;
+			break;
+		default:
+			cout<<"No key";
+	}
+
+}
+void UKeyReleased(unsigned char key, int x, int y){
+
+}
+
+void toggleOrtho(){
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
+	if(!orthoPerspective){
+		std::cout << "set to ortho" << endl;
+		glOrtho(-1.0, 1.0, -1.0, 1.0, 1, 10);
+		orthoPerspective = true;
+	}else {
+		glFrustum(-1.0, 2.0, -1.0, 1.0, 5, 100);
+		orthoPerspective = false;
+		std::cout << "set to frustum" << endl;
+	}
+
+	glMatrixMode(GL_MODELVIEW);
+
 }
