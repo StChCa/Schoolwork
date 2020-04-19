@@ -34,7 +34,7 @@ glm::vec3 pyramidScale(1.0f);
 glm::vec3 objectColor(1.0f, 1.0f, 1.0f);
 glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 
-glm::vec3 lightPosition(2.0f, 0.5f, -3.0f);
+glm::vec3 lightPosition(5.0f, 2.0f, 5.0f);
 glm::vec3 lightScale(0.3f);
 
 // camera position
@@ -48,11 +48,13 @@ void URenderGraphics(void);
 void UCreateShader(void);
 void UCreateBuffers(void);
 void UGenerateTexture(void);
-void drawCircle(float, int, GLfloat, GLfloat, GLfloat, vector<GLfloat>&);
+void drawCircle(float, int, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, vector<GLfloat>&);
 vector<GLfloat> generateCircleVerts(float, int, GLfloat, GLfloat, GLfloat);
-void drawConnectedCircles(vector<GLfloat>, vector<GLfloat>, vector<GLfloat>&);
+void drawConnectedCircles(vector<GLfloat>, vector<GLfloat>, GLfloat, GLfloat, GLfloat, vector<GLfloat>&);
 void createEqualTriangle(float, float, float, float, vector<GLfloat>&);
 void createRectangle(float, float, float, float, float, vector<GLfloat>&);
+vector<GLfloat> generateOffsetVec(vector<GLfloat>);
+void createHandle(vector<GLfloat>&);
 
 
 // Vertex shader source code
@@ -228,7 +230,7 @@ void URenderGraphics(void)
 	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f)); // Increase the size by scale 2
 
 	// Transforms the camera
-	view = glm::translate(view, glm::vec3(0.0f, -2.0f, -5.0f)); // Moves the workd .5 units on x and -5 units in z
+	view = glm::translate(view, glm::vec3(0.0f, -2.0f, -10.0f)); // Moves the workd .5 units on x and -5 units in z
 
 	// Creates a perspective projection
 	projection = glm::perspective(45.0f, (GLfloat)WindowWidth / (GLfloat)WindowHeight, 0.1f, 100.0f);
@@ -351,17 +353,32 @@ void UCreateBuffers()
 
 	vector<GLfloat> lowerPanCircle = generateCircleVerts(.85, 30, 0.0f, 0.0f, 0.0f);
 	vector<GLfloat> upperPanCircle = generateCircleVerts(1.1, 30, 0.0f, 0.0f, 0.3f);
+	vector<GLfloat> bottomLowerPanCircle = generateCircleVerts(.85, 30, 0.0f, 0.0f, -0.1f);
 
-	drawConnectedCircles(lowerPanCircle, upperPanCircle, verticesVec);
+	drawConnectedCircles(lowerPanCircle, upperPanCircle, 0.0f, 0.0f, 1.0f, verticesVec);
+	drawConnectedCircles(bottomLowerPanCircle, upperPanCircle, 0.0f, 0.0f, -1.0f, verticesVec);
 
 //	// Base of pan
-	drawCircle(.85, 30, 0.0f, 0.0f, 0.0f, verticesVec);
+	drawCircle(.85, 30, 0.0f, 0.0f, -0.1f, 0.0f, 0.0f, -1.0f, verticesVec);
+	drawCircle(.85, 30, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, verticesVec);
 //	// Top of pan (opening)
 //	drawCircle(1.1, 30, 0.0f, 0.0f, 0.3f, verticesVec);
 	// base of handle
 	createEqualTriangle(0.6f, 0.0f, 1.3f, 0.3f, verticesVec);
+	createEqualTriangle(0.6f, 0.0f, 1.3f, 0.25f, verticesVec);
 	// end of handle
-	createRectangle(0.25f, 0.75f, 0.0f, 1.75f, 0.3f, verticesVec);
+	createHandle(verticesVec);
+
+	// Create a second copy of verticesVec. Offset it in the Z by a few px and draw all the connecting poinst
+	//vector<GLfloat> offsetVec = generateOffsetVec(verticesVec);
+
+	// drwa the connection triangles from original to offset shape.
+//	drawConnectedCircles(offsetVec, verticesVec, verticesVec);
+
+	// append offsetVec to verticesVec
+//	for (int i = 0; i < offsetVec.size(); i++){
+//		verticesVec.push_back(offsetVec[i]);
+//	}
 
 		// Convert vectors into arrays for drawing
 		GLfloat vertices[verticesVec.size()];
@@ -409,6 +426,29 @@ void UCreateBuffers()
 
 	glBindVertexArray(0);
 
+}
+
+void createHandle(vector<GLfloat>& verts){
+	createRectangle(0.25f, 0.75f, 0.0f, 1.75f, 0.3f, verts);
+	createRectangle(0.25f, 0.75f, 0.0f, 1.75f, 0.25f, verts);
+	createRectangle(0.25f, 0.75f, 0.0f, 1.75f, 0.3f, verts);
+	createRectangle(0.25f, 0.75f, 0.0f, 1.75f, 0.3f, verts);
+	createRectangle(0.25f, 0.75f, 0.0f, 1.75f, 0.3f, verts);
+}
+
+vector<GLfloat> generateOffsetVec(vector<GLfloat> inVec){
+	vector<GLfloat> offsetVec;
+	std::cout << inVec.size();
+
+	for (unsigned int i = 0; i < inVec.size(); i++){
+		std::cout << i << " val : " << inVec[i];
+		if ( i % 6 == 5){
+			offsetVec.push_back( 0.0f );
+		} else{
+			offsetVec.push_back(inVec[i]);
+		}
+	}
+	return offsetVec;
 }
 
 // Generate and load the texture
@@ -547,7 +587,7 @@ void createEqualTriangle(float size, float x, float y, float z, vector<GLfloat>&
 	verts.push_back((float)(rand() % 100) / 100.0f);
 }
 
-void drawCircle(float radius, int numPoints, GLfloat centX, GLfloat centY, GLfloat centZ, vector<GLfloat>& verts){
+void drawCircle(float radius, int numPoints, GLfloat centX, GLfloat centY, GLfloat centZ, GLfloat norm1, GLfloat norm2, GLfloat norm3, vector<GLfloat>& verts){
 
 	float theta = 360.0f / (float)numPoints;
 
@@ -591,9 +631,9 @@ void drawCircle(float radius, int numPoints, GLfloat centX, GLfloat centY, GLflo
 		verts.push_back(centY);
 		verts.push_back(centZ);
 		// normals
-		verts.push_back(0.0f);
-		verts.push_back(0.0f);
-		verts.push_back(1.0f);
+		verts.push_back(norm1);
+		verts.push_back(norm2);
+		verts.push_back(norm3);
 		// texture
 		verts.push_back((float)(rand() % 100) / 100.0f);
 		verts.push_back((float)(rand() % 100) / 100.0f);
@@ -603,9 +643,9 @@ void drawCircle(float radius, int numPoints, GLfloat centX, GLfloat centY, GLflo
 		verts.push_back(sin(pt1Rad) * radius);
 		verts.push_back(centZ);
 		// normals
-		verts.push_back(0.0f);
-		verts.push_back(0.0f);
-		verts.push_back(1.0f);
+		verts.push_back(norm1);
+		verts.push_back(norm2);
+		verts.push_back(norm3);
 		// texture
 		verts.push_back((float)(rand() % 100) / 100.0f);
 		verts.push_back((float)(rand() % 100) / 100.0f);
@@ -615,9 +655,9 @@ void drawCircle(float radius, int numPoints, GLfloat centX, GLfloat centY, GLflo
 		verts.push_back(sin(pt2Rad) * radius);
 		verts.push_back(centZ);
 		// normals
-		verts.push_back(0.0f);
-		verts.push_back(0.0f);
-		verts.push_back(1.0f);
+		verts.push_back(norm1);
+		verts.push_back(norm2);
+		verts.push_back(norm3);
 		// texture
 		verts.push_back((float)(rand() % 100) / 100.0f);
 		verts.push_back((float)(rand() % 100) / 100.0f);
@@ -648,12 +688,14 @@ vector<GLfloat> generateCircleVerts(float radius, int numPoints, GLfloat centX, 
 }
 
 // Connect the exterior points of 2 circles
-void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, vector<GLfloat>& verts){
+void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, GLfloat normX, GLfloat normY, GLfloat normZ, vector<GLfloat>& verts){
 
 	// we need to alternate drawing points on c1 and c2 like this
 	// draw triangle of points c1[0], c1[1], c2[0]
 	// then c2[0], c2[1], c1[1]
 	// we will use modulous to make sure we don't go over max number of verts
+
+	float theta = 360.0f / (float)c1.size();
 
 	for ( unsigned int i = 0; i < c1.size(); i+=3 ){
 		//Triangle 1
@@ -664,9 +706,9 @@ void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, vector<GLfloat
 		verts.push_back(c1[current+1]); //y
 		verts.push_back(c1[current+2]); //z
 		// normals
-		verts.push_back(0.0f);
-		verts.push_back(0.0f);
-		verts.push_back(1.0f);
+		verts.push_back(cos(theta * (i/3) * normX));
+		verts.push_back(sin(theta * (i/3) * normY));
+		verts.push_back(normZ);
 		// texture
 		verts.push_back((float)(rand() % 100) / 100.0f);
 		verts.push_back((float)(rand() % 100) / 100.0f);
@@ -676,9 +718,9 @@ void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, vector<GLfloat
 		verts.push_back(c1[next+1]); //y
 		verts.push_back(c1[next+2]); //z
 		// normals
-		verts.push_back(0.0f);
-		verts.push_back(0.0f);
-		verts.push_back(1.0f);
+		verts.push_back(cos(theta * (i/3) * normX));
+		verts.push_back(sin(theta * (i/3) * normY));
+		verts.push_back(normZ);
 		// texture
 		verts.push_back((float)(rand() % 100) / 100.0f);
 		verts.push_back((float)(rand() % 100) / 100.0f);
@@ -688,9 +730,9 @@ void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, vector<GLfloat
 		verts.push_back(c2[current+1]); //y
 		verts.push_back(c2[current+2]); //z
 		// normals
-		verts.push_back(0.0f);
-		verts.push_back(0.0f);
-		verts.push_back(1.0f);
+		verts.push_back(cos(theta * (i/3) * normX));
+		verts.push_back(sin(theta * (i/3) * normY));
+		verts.push_back(normZ);
 		// texture
 		verts.push_back((float)(rand() % 100) / 100.0f);
 		verts.push_back((float)(rand() % 100) / 100.0f);
@@ -702,9 +744,9 @@ void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, vector<GLfloat
 		verts.push_back(c2[current+1]); //y
 		verts.push_back(c2[current+2]); //z
 		// normals
-		verts.push_back(0.0f);
-		verts.push_back(0.0f);
-		verts.push_back(1.0f);
+		verts.push_back(cos(theta * (i/3) * normX));
+		verts.push_back(sin(theta * (i/3) * normY));
+		verts.push_back(normZ);
 		// texture
 		verts.push_back((float)(rand() % 100) / 100.0f);
 		verts.push_back((float)(rand() % 100) / 100.0f);
@@ -714,9 +756,9 @@ void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, vector<GLfloat
 		verts.push_back(c2[next+1]); //y
 		verts.push_back(c2[next+2]); //z
 		// normals
-		verts.push_back(0.0f);
-		verts.push_back(0.0f);
-		verts.push_back(1.0f);
+		verts.push_back(cos(theta * (i/3) * normX));
+		verts.push_back(sin(theta * (i/3) * normY));
+		verts.push_back(normZ);
 		// texture
 		verts.push_back((float)(rand() % 100) / 100.0f);
 		verts.push_back((float)(rand() % 100) / 100.0f);
@@ -726,9 +768,9 @@ void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, vector<GLfloat
 		verts.push_back(c1[next+1]); //y
 		verts.push_back(c1[next+2]); //z
 		// normals
-		verts.push_back(0.0f);
-		verts.push_back(0.0f);
-		verts.push_back(1.0f);
+		verts.push_back(cos(theta * (i/3) * normX));
+		verts.push_back(sin(theta * (i/3) * normY));
+		verts.push_back(normZ);
 		// texture
 		verts.push_back((float)(rand() % 100) / 100.0f);
 		verts.push_back((float)(rand() % 100) / 100.0f);
