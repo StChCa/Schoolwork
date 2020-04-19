@@ -28,17 +28,25 @@ GLint shaderProgram, lampShaderProgram, WindowWidth = 880, WindowHeight = 600;
 GLuint VBO, VAO, lightVAO, texture;
 GLfloat degrees = glm::radians(-45.0f); // Converts float to degrees
 
-glm::vec3 pyramidPosition(0.0f, 0.0f, 0.0f);
-glm::vec3 pyramidScale(1.0f);
+GLfloat lastMouseX = 400, lastMouseY = 300; // Locks mouse curser at the center of screen
+GLfloat mouseXOffset, mouseYOffset, yaw = 0.0f, pitch = 0.0f; // mouse offset, yaw and pitch vars
+GLfloat sensitivity = 0.01f; //Used for mouse/camera rotation sensitivity
+bool mouseDetected = true, rightClicked = false, leftClicked = false, autoRotate = true; // Initially true when mouse movement is detected
+
+//glm::vec3 pyramidPosition(0.0f, 0.0f, 0.0f);
+//glm::vec3 pyramidScale(1.0f);
 
 glm::vec3 objectColor(1.0f, 1.0f, 1.0f);
-glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+glm::vec3 lightColor(1.0f, 0.5f, 0.5f);
 
 glm::vec3 lightPosition(5.0f, 2.0f, 5.0f);
 glm::vec3 lightScale(0.3f);
 
 // camera position
-glm::vec3 cameraPosition(0.0f, 0.0f, -6.0f);
+glm::vec3 cameraPosition(0.0f, 0.0f, -0.0f);
+glm::vec3 CameraUpY = glm::vec3(0.0f, 1.0f, 0.0f); // Temporary y unit vector
+glm::vec3 CameraForwardZ = glm::vec3(0.0f, 0.0f, -10.0f); // Temp z unit vector
+glm::vec3 front; // Temp z unit vector for mouse
 
 float cameraRotation = glm::radians(-25.0f);
 
@@ -55,6 +63,9 @@ void createEqualTriangle(float, float, float, float, vector<GLfloat>&);
 void createRectangle(float, float, float, float, float, vector<GLfloat>&);
 vector<GLfloat> generateOffsetVec(vector<GLfloat>);
 void createHandle(vector<GLfloat>&);
+void orbit(int x, int y);
+void UMouseMove(int x, int y);
+void UMouseEntryFunc(int);
 
 
 // Vertex shader source code
@@ -182,9 +193,13 @@ int main(int argc, char* argv[])
 	// Use the Shader program
 	//glUseProgram(shaderProgram); // uses the shader program
 
-	glClearColor(0.0f, 0.0f, -.0f, 1.0f); // Sets the bg color to black
+	glClearColor(0.5f, 0.5f, 0.5f, 1.0f); // Sets the bg color to black
 
 	glutDisplayFunc(URenderGraphics);
+
+	// Keyboard / mouse functions
+	glutPassiveMotionFunc(UMouseMove);
+	glutEntryFunc(UMouseEntryFunc);
 
 	glutMainLoop();
 
@@ -213,7 +228,7 @@ void URenderGraphics(void)
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //Clears screen
 
-
+	CameraForwardZ = front; // Replaces camera forward vecor twith radians normalized as unit vector
 
 	GLint modelLoc, viewLoc, projLoc, lightColorLoc, lightPositionLoc, viewPositionLoc, uTextureLoc;
 
@@ -226,11 +241,16 @@ void URenderGraphics(void)
 
 	// Transofms  the object
 	model = glm::translate(model, glm::vec3(0.0, 0.0f, 0.0f)); // Place the object in center of biewport
-	model = glm::rotate(model, glutGet(GLUT_ELAPSED_TIME) * .0005f, glm::vec3(0.0, 1.0f, 0.0f)); //roatate y -45 degrees
+	if (autoRotate){
+		model = glm::rotate(model, glutGet(GLUT_ELAPSED_TIME) * .0005f, glm::vec3(1.0, 1.0f, 0.0f)); //roatate y -45 degrees
+	}
 	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f)); // Increase the size by scale 2
 
 	// Transforms the camera
-	view = glm::translate(view, glm::vec3(0.0f, -2.0f, -10.0f)); // Moves the workd .5 units on x and -5 units in z
+	//view = glm::translate(view, glm::vec3(0.0f, -2.0f, -10.0f)); // Moves the workd .5 units on x and -5 units in z
+
+	// Transform view based on mouse movement
+	view = glm::lookAt(CameraForwardZ, cameraPosition, CameraUpY);
 
 	// Creates a perspective projection
 	projection = glm::perspective(45.0f, (GLfloat)WindowWidth / (GLfloat)WindowHeight, 0.1f, 100.0f);
@@ -591,29 +611,6 @@ void drawCircle(float radius, int numPoints, GLfloat centX, GLfloat centY, GLflo
 
 	float theta = 360.0f / (float)numPoints;
 
-//	// Push a point for the center point @ prevSize + 0
-//	verts.push_back(centX);
-//	verts.push_back(centY);
-//	verts.push_back(centZ);
-//	// Color info
-//	verts.push_back(1.0f);
-//	verts.push_back(0.0f);
-//	verts.push_back(0.0f);
-//
-//	// Generate points on the circle using basic trig
-//	for (int i = 0; i < numPoints; i++){
-//		// get degrees (theta) for current point
-//		float deg = theta * i;
-//
-//		verts.push_back(cos(deg) * radius);
-//		verts.push_back(sin(deg) * radius);
-//		verts.push_back(centZ);
-//		verts.push_back(1.0f);
-//		verts.push_back(0.0f);
-//		verts.push_back(0.0f);
-//
-//	}
-
 	// for each triangle we will draw (num points = num triangles
 	for (int i = 1; i < numPoints+1; i++){
 
@@ -775,4 +772,58 @@ void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, GLfloat normX,
 		verts.push_back((float)(rand() % 100) / 100.0f);
 		verts.push_back((float)(rand() % 100) / 100.0f);
 	}
+}
+
+
+/// ******************************************************************************
+// Mouse functions
+/// ******************************************************************************
+
+void UMouseEntryFunc(int state){
+	if( state == GLUT_LEFT) {
+		// Start auto rotate
+		autoRotate = true;
+		std::cout << "LEFT" << endl;
+	} else if( state == GLUT_ENTERED){
+		// Stop auto rotate.
+		autoRotate = false;
+		std::cout << "Entered" << endl;
+	}
+}
+
+void UMouseMove(int x, int y){
+	orbit(x, y);
+}
+
+void orbit(int x, int y){
+	if(mouseDetected)
+	{
+		lastMouseX = x;
+		lastMouseY = y;
+		mouseDetected = false;
+	}
+
+	// gets the direction the mouse was moved in x and y
+	mouseXOffset = x - lastMouseX;
+	mouseYOffset = lastMouseY - y; // Inverted Y
+
+	// updates with new mouse coordinates
+	lastMouseX = x;
+	lastMouseY = y;
+
+	// Applies sensitivity to mouse direction
+	mouseXOffset *= sensitivity;
+	mouseYOffset *= sensitivity;
+
+	// Accumulates the yaw and pitch vars
+	yaw += mouseXOffset;
+	pitch += mouseYOffset;
+
+	// Orbits around the center
+	std::cout << "yaw : " << yaw << endl;
+	std::cout << "prevX : " << front.x << endl;
+	front.x = 10.0f * cos(yaw);
+	std::cout << "postX : " << front.x << endl;
+	front.y = 10.0f * sin(pitch);
+	front.z = sin(yaw) * cos(pitch) * 10.0f;
 }
