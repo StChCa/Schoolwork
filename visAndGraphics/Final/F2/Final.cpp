@@ -4,19 +4,16 @@
 #include <GL/freeglut.h>
 #include <vector>
 #include <ctime>
-
-// math
 //GLM Math Header inclusions
 #include <GL/glm/glm/glm.hpp>
 #include <GL/glm/glm/gtc/matrix_transform.hpp>
 #include <GL/glm/glm/gtc/type_ptr.hpp>
-
 // Soil
 #include "SOIL2/SOIL2.h"
 
 using namespace std;
 
-#define WINDOW_TITLE "Modern OPENGL"
+#define WINDOW_TITLE "Cardone Final"
 
 // Shader program macro
 #ifndef GLSL
@@ -31,7 +28,7 @@ GLfloat degrees = glm::radians(-45.0f); // Converts float to degrees
 GLfloat lastMouseX = 400, lastMouseY = 300; // Locks mouse curser at the center of screen
 GLfloat mouseXOffset, mouseYOffset, yaw = 0.0f, pitch = 0.0f; // mouse offset, yaw and pitch vars
 GLfloat sensitivity = 0.01f; //Used for mouse/camera rotation sensitivity
-bool mouseDetected = true, rightClicked = false, leftClicked = false, autoRotate = true; // Initially true when mouse movement is detected
+bool mouseDetected = true, rightClicked = false, leftClicked = false, autoRotate = true, orthoPerspective = false; // Initially true when mouse movement is detected
 
 //glm::vec3 pyramidPosition(0.0f, 0.0f, 0.0f);
 //glm::vec3 pyramidScale(1.0f);
@@ -66,6 +63,7 @@ void createHandle(vector<GLfloat>&);
 void orbit(int x, int y);
 void UMouseMove(int x, int y);
 void UMouseEntryFunc(int);
+void UMouseClick(int button, int state, int x, int y);
 
 
 // Vertex shader source code
@@ -200,6 +198,7 @@ int main(int argc, char* argv[])
 	// Keyboard / mouse functions
 	glutPassiveMotionFunc(UMouseMove);
 	glutEntryFunc(UMouseEntryFunc);
+	glutMouseFunc(UMouseClick);
 
 	glutMainLoop();
 
@@ -259,6 +258,8 @@ void URenderGraphics(void)
 	modelLoc = glGetUniformLocation(shaderProgram, "model");
 	viewLoc = glGetUniformLocation(shaderProgram, "view");
 	projLoc = glGetUniformLocation(shaderProgram, "projection");
+
+
 
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
@@ -789,10 +790,65 @@ void UMouseEntryFunc(int state){
 		autoRotate = false;
 		std::cout << "Entered" << endl;
 	}
+
+
+	bool toggle = true;
+	  static GLboolean s_usePerspective = GL_TRUE;
+
+	  // toggle the control variable if appropriate
+	  if (toggle)
+	    s_usePerspective = !s_usePerspective;
+
+	  // select the projection matrix and clear it out
+	  glMatrixMode(GL_PROJECTION);
+	  glLoadIdentity();
+
+	  // choose the appropriate projection based on the currently toggled mode
+	  if (s_usePerspective)
+	  {
+	    // set the perspective with the appropriate aspect ratio
+	    glFrustum(-1.0, 1.0, -1.0, 1.0, 5, 100);
+	  }
+	  else
+	  {
+	    // set up an orthographic projection with the same near clip plane
+	    glOrtho(-1.0, 1.0, -1.0, 1.0, 5, 100);
+	  }
+
+	  // select modelview matrix and clear it out
+	  glMatrixMode(GL_MODELVIEW);
+
+
+
+
+
 }
 
 void UMouseMove(int x, int y){
 	orbit(x, y);
+}
+
+void UMouseClick(int button, int state, int x, int y)
+{
+
+	if((button == GLUT_LEFT_BUTTON) && (state == GLUT_DOWN) ){
+
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+
+		if(!orthoPerspective){
+			std::cout << "set to ortho" << endl;
+			glOrtho(-1.0, 1.0, -1.0, 1.0, 1, 10);
+			orthoPerspective = true;
+		}else {
+			glFrustum(-1.0, 2.0, -1.0, 1.0, 5, 100);
+			orthoPerspective = false;
+			std::cout << "set to frustum" << endl;
+		}
+
+		glMatrixMode(GL_MODELVIEW);
+
+	}
 }
 
 void orbit(int x, int y){
@@ -818,12 +874,14 @@ void orbit(int x, int y){
 	// Accumulates the yaw and pitch vars
 	yaw += mouseXOffset;
 	pitch += mouseYOffset;
+	std::cout << pitch << endl;
 
 	// Orbits around the center
-	std::cout << "yaw : " << yaw << endl;
-	std::cout << "prevX : " << front.x << endl;
 	front.x = 10.0f * cos(yaw);
-	std::cout << "postX : " << front.x << endl;
-	front.y = 10.0f * sin(pitch);
 	front.z = sin(yaw) * cos(pitch) * 10.0f;
+
+	if( pitch < -1 || pitch > 1 ) {
+		return;
+	}
+	front.y = 10.0f * sin(pitch);
 }
