@@ -20,10 +20,12 @@ using namespace std;
 #define GLSL(Version, Source) "#version " #Version "\n" #Source
 #endif
 
-// Variable declarations
+/***********************************************************************************
+ * Variable Declarations
+ ***********************************************************************************/
 GLint shaderProgram, lampShaderProgram;
 GLint WindowWidth = 880, WindowHeight = 600; // window sizes
-GLuint VBO, VAO, lightVAO, texture; // vertex objects and texture
+GLuint VBO, lightVBO, VAO, lightVAO, texture; // vertex objects and texture
 GLfloat degrees = glm::radians(-45.0f); // Converts float to degrees
 GLfloat lastMouseX = 400, lastMouseY = 300; // Locks mouse curser at the center of screen
 GLfloat mouseXOffset, mouseYOffset, yaw = 0.0f, pitch = 0.0f; // mouse offset, yaw and pitch vars
@@ -41,7 +43,9 @@ glm::vec3 CameraForwardZ = glm::vec3(0.0f, 0.0f, -10.0f); // Temp z unit vector
 glm::vec3 front; // Temp z unit vector for mouse
 float cameraRotation = glm::radians(-25.0f);
 
-// Function prototypes
+/***********************************************************************************
+ * FUNCTION PROTOTYPES
+ ***********************************************************************************/
 void UResizeWindow(int, int);
 void URenderGraphics(void);
 void UCreateShader(void);
@@ -68,11 +72,14 @@ vector<GLfloat> generateCircleVerts(float, int, GLfloat, GLfloat, GLfloat);
 vector<GLfloat> generateOffsetVec(vector<GLfloat>);
 void createHandle(vector<GLfloat>&);
 
+/***********************************************************************************
+ * Shader source
+ ***********************************************************************************/
 // Vertex shader source code
 const GLchar * vertexShaderSource = GLSL(330,
 		layout (location = 0) in vec3 position; // Vertex data from vertex attrib pointer 0
-		layout (location = 1) in vec3 normal;
-		layout (location = 2) in vec2 textureCoordinates;
+		layout (location = 1) in vec3 normal; // Normal data for lighting
+		layout (location = 2) in vec2 textureCoordinates; // texture locations
 
 		out vec3 FragmentPos;
 		out vec3 Normal;
@@ -120,10 +127,10 @@ const GLchar * fragmentShaderSource = GLSL(330,
 		float impact = max(dot(norm, lightDirection), 0.0); // Calculate diffuse impact by generating dot product of normal light
 		vec3 diffuse = impact * lightColor; // Generate diffuse light color
 
-		float specularIntensity = 0.3f; // Set specular light strength
-		float highlightSize = 128.0f; // Set specular highlight size
+		float specularIntensity = 0.9f; // Set specular light strength
+		float highlightSize = 500.0f; // Set specular highlight size
 		vec3 viewDir = normalize(viewPosition - FragmentPos); // Calculate view direction
-		vec3 reflectDir = reflect(-lightDirection, norm); // calculate reflection vector
+		vec3 reflectDir = reflect(lightDirection, norm); // calculate reflection vector
 
 		float specularComponent = pow(max(dot(viewDir, reflectDir), 0.0), highlightSize); //Specular component
 		vec3 specular = specularIntensity * specularComponent * lightColor;
@@ -156,17 +163,19 @@ const GLchar * lampVertexShaderSource = GLSL(330,
 // Fragment shader source
 const GLchar * lampFragmentShaderSource = GLSL(330,
 
-		out vec4 color; //For outgoing lamp color (smaller pyramid) tothe GPU
+		out vec4 color; //For outgoing lamp color (light source) tothe GPU
 
 	void main(){
-		color = vec4(1.0f); // Set color to white with alpha 1.0
+		color = vec4(1.0f, 0.8f, 0.8f, 1.0f); // Set lightColor
 	}
 );
 
-// main program
+/***********************************************************************************
+ * Main Program
+ ***********************************************************************************/
 int main(int argc, char* argv[])
 {
-	// Seed random number to allow for variability in textures
+	// Seed random number to allow for variability in some textures
 	srand ( time(NULL) );
 
 	glutInit(&argc, argv);
@@ -184,22 +193,20 @@ int main(int argc, char* argv[])
 				return -1;
 			}
 
-	UCreateShader();
+	UCreateShader(); // Call our shader creation function
 
-	UCreateBuffers();
+	UCreateBuffers(); // Call our buffer creation function
 
-	UGenerateTexture();
+	UGenerateTexture(); // Call texture generator function
 
 	// Use the Shader program
-	//glUseProgram(shaderProgram); // uses the shader program
-
 	glClearColor(0.5f, 0.5f, 0.5f, 1.0f); // Sets the bg color to black
 
-	glutDisplayFunc(URenderGraphics);
+	glutDisplayFunc(URenderGraphics); // set our graphics display function
 
 	// Keyboard / mouse functions
-	glutPassiveMotionFunc(UMouseMove);
-	glutEntryFunc(UMouseEntryFunc);
+	glutPassiveMotionFunc(UMouseMove); // Passive mouse movement callback
+	glutEntryFunc(UMouseEntryFunc); // Mouse enter/exit callback
 	glutKeyboardFunc(UKeyboard); // Detects key press
 	glutKeyboardUpFunc(UKeyReleased); // Detects key release
 
@@ -209,10 +216,14 @@ int main(int argc, char* argv[])
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteVertexArrays(1, &lightVAO);
 	glDeleteBuffers(1, &VBO);
+	glDeleteBuffers(1, &lightVBO);
 
 	return 0;
 }
 
+/***********************************************************************************
+ * Graphics functions
+ ***********************************************************************************/
 // Resizes the window
 void UResizeWindow(int w, int h)
 {
@@ -231,14 +242,13 @@ void URenderGraphics(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //Clears screen
 
 	CameraForwardZ = front; // Replaces camera forward vecor twith radians normalized as unit vector
-
+	// initialize vars
 	GLint modelLoc, viewLoc, projLoc, lightColorLoc, lightPositionLoc, viewPositionLoc, uTextureLoc;
-
 	glm::mat4 model;
 	glm::mat4 view;
 	glm::mat4 projection;
 
-	glUseProgram(shaderProgram);
+	glUseProgram(shaderProgram); // Set shader program to be used
 	glBindVertexArray(VAO); // Activate the bertex array obj
 
 	// Transofms  the object
@@ -262,12 +272,11 @@ void URenderGraphics(void)
 	viewLoc = glGetUniformLocation(shaderProgram, "view");
 	projLoc = glGetUniformLocation(shaderProgram, "projection");
 
-
-
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
+	// Lighting uniform info to apply to pan
 	lightColorLoc = glGetUniformLocation(shaderProgram, "lightColor");
 	lightPositionLoc = glGetUniformLocation(shaderProgram, "lightPos");
 	viewPositionLoc = glGetUniformLocation(shaderProgram, "viewPosition");
@@ -279,6 +288,7 @@ void URenderGraphics(void)
 	uTextureLoc = glGetUniformLocation( shaderProgram, "uTexture");
 	glUniform1i(uTextureLoc, 0);
 
+	glBindTexture(GL_TEXTURE_2D, texture);
 	glDrawArrays(GL_TRIANGLES, 0, 10000);
 
 	glBindVertexArray(0);
@@ -287,10 +297,11 @@ void URenderGraphics(void)
 	glUseProgram(lampShaderProgram);
 	glBindVertexArray(lightVAO);
 
-
+	// transform light as needed.
 	model1 = glm::translate(model1, lightPosition);
 	model1 = glm::scale(model1, lightScale);
 
+	// Uniforms for light source
 	modelLoc = glGetUniformLocation(lampShaderProgram, "model");
 	viewLoc = glGetUniformLocation(lampShaderProgram, "view");
 	projLoc = glGetUniformLocation(lampShaderProgram, "projection");
@@ -299,25 +310,18 @@ void URenderGraphics(void)
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture);
 	glDrawArrays(GL_TRIANGLES, 0, 10000);
 
 	glBindVertexArray(0);
 
-	glUseProgram(lampShaderProgram);
-
 	glutPostRedisplay();
 	glutSwapBuffers();
-
-
 
 }
 
 // Creates the shader program
 void UCreateShader()
 {
-
 	// Vertex shader
 	GLint vertexShader = glCreateShader(GL_VERTEX_SHADER); //Creates the vertex shader
 	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL); // attaches vert shader to source
@@ -342,12 +346,12 @@ void UCreateShader()
 	// Same process for lamp
 	// Vertex shader
 	GLint lampVertexShader = glCreateShader(GL_VERTEX_SHADER); //Creates the vertex shader
-	glShaderSource(lampVertexShader, 1, &vertexShaderSource, NULL); // attaches vert shader to source
+	glShaderSource(lampVertexShader, 1, &lampVertexShaderSource, NULL); // attaches vert shader to source
 	glCompileShader(lampVertexShader); // Compiles the vertex shader
 
 	// Fragment shader
 	GLint lampFragmentShader = glCreateShader(GL_FRAGMENT_SHADER); //create frag shader
-	glShaderSource(lampFragmentShader, 1, &fragmentShaderSource, NULL); //Attaches the frag shader to source
+	glShaderSource(lampFragmentShader, 1, &lampFragmentShaderSource, NULL); //Attaches the frag shader to source
 	glCompileShader(lampFragmentShader); //compiles frag shader
 
 	// Shader program
@@ -360,20 +364,67 @@ void UCreateShader()
 	glDeleteShader(lampVertexShader);
 	glDeleteShader(lampFragmentShader);
 
-
 }
-
-
 
 // Creates the buffer and array objs
 void UCreateBuffers()
 {
+	// Store light cube vertexes
+	GLfloat lightVerts[] ={
+			0.0f, 0.0f, 0.0f, // front origin
+			1.0f, 1.0f, 0.0f, // front Up right
+			1.0f, 0.0f, 0.0f, // front lower right
 
+			0.0f, 0.0f, 0.0f, // front origin
+			1.0f, 1.0f, 0.0f, // front Up right
+			0.0f, 1.0f, 0.0f, // front up left
 
+			1.0f, 1.0f, 0.0f, // front Up right
+			0.0f, 1.0f, 0.0f, // front up left
+			0.0f, 1.0f, 1.0f, // back top left
 
+			1.0f, 1.0f, 0.0f, // front Up right
+			0.0f, 1.0f, 1.0f, // back top left
+			1.0f, 1.0f, 1.0f, // back top right
+
+			0.0f, 1.0f, 1.0f, // back top left
+			1.0f, 1.0f, 1.0f, // back top right
+			1.0f, 0.0f, 1.0f, // back bottom right
+
+			0.0f, 1.0f, 1.0f, // back top left
+			0.0f, 0.0f, 1.0f, // back origin
+			1.0f, 0.0f, 1.0f, // back bottom right
+
+			0.0f, 0.0f, 0.0f, // front origin
+			0.0f, 0.0f, 1.0f, // back origin
+			1.0f, 0.0f, 1.0f, // back bottom right
+
+			0.0f, 0.0f, 0.0f, // front origin
+			1.0f, 0.0f, 1.0f, // back bottom right
+			1.0f, 0.0f, 0.0f, // front lower right
+
+			0.0f, 0.0f, 0.0f, // front origin
+			0.0f, 0.0f, 1.0f, // back origin
+			0.0f, 1.0f, 0.0f, // front up left
+
+			0.0f, 0.0f, 1.0f, // back origin
+			0.0f, 1.0f, 0.0f, // front up left
+			0.0f, 1.0f, 1.0f, // back top left
+
+			1.0f, 0.0f, 0.0f, // front lower right
+			1.0f, 0.0f, 1.0f, // back bottom right
+			1.0f, 1.0f, 1.0f, // back top right
+
+			1.0f, 0.0f, 0.0f, // front lower right
+			1.0f, 1.0f, 0.0f, // front Up right
+			1.0f, 1.0f, 1.0f, // back top right
+	};
+
+	/**********************************
+	 * Find pan vertexes
+	 *********************************/
 	// Position and Color data
 	vector<GLfloat> verticesVec;
-
 
 	vector<GLfloat> lowerPanCircle = generateCircleVerts(.85, 30, 0.0f, 0.0f, 0.0f);
 	vector<GLfloat> upperPanCircle = generateCircleVerts(1.1, 30, 0.0f, 0.0f, 0.3f);
@@ -394,23 +445,43 @@ void UCreateBuffers()
 	createEqualTriangle(0.6f, 0.0f, 1.3f, 0.21f, -1.0f, verticesVec);
 	createEdgesOfTriangle(verticesVec);
 
-	// Create a second copy of verticesVec. Offset it in the Z by a few px and draw all the connecting poinst
-	//vector<GLfloat> offsetVec = generateOffsetVec(verticesVec);
+	// Convert vectors into arrays for drawing
+	GLfloat vertices[verticesVec.size()];
+	for (unsigned int i = 0; i < verticesVec.size(); i++){
+		vertices[i] = verticesVec[i];
+	}
 
-	// drwa the connection triangles from original to offset shape.
-//	drawConnectedCircles(offsetVec, verticesVec, verticesVec);
+	/*******************
+	 *  DRAW LIGHT
+	 ******************/
+	// Generate buffer ids for lamp
+	glGenVertexArrays(2, &lightVAO);
+	glGenBuffers(2, &lightVBO);
 
-	// append offsetVec to verticesVec
-//	for (int i = 0; i < offsetVec.size(); i++){
-//		verticesVec.push_back(offsetVec[i]);
-//	}
+	//Activate the lamp vao
+	glBindVertexArray(lightVAO);
 
-		// Convert vectors into arrays for drawing
-		GLfloat vertices[verticesVec.size()];
-		for (unsigned int i = 0; i < verticesVec.size(); i++){
-			vertices[i] = verticesVec[i];
-		}
+	// referenceing the same vbo for its verticies
+	glBindBuffer(GL_ARRAY_BUFFER, lightVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(lightVerts), lightVerts, GL_STATIC_DRAW);
 
+	// set the attrib pointer to 0 to hold position data used for lamp
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
+
+	// set attribute pointer 2 to hold texture coordinate data
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(2);
+
+
+	glBindVertexArray(1);
+
+	/*******************
+	 *  DRAW PAN
+	 ******************/
 	// Generate buffer ids
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -435,46 +506,18 @@ void UCreateBuffers()
 
 	glBindVertexArray(0); // unbind the vao
 
-	// Generate buffer ids for lamp
-	glGenVertexArrays(1, &lightVAO);
-
-	//Activate the lamp vao
-	glBindVertexArray(lightVAO);
-
-	// referenceing the same vbo for its verticies
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-	// set the attrib pointer to 0 to hold position data used for lamp
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
-
-
-	glBindVertexArray(0);
-
 }
 
+/***********************************************************************************
+ * Drawing and shape creation functions
+ ***********************************************************************************/
 void createHandle(vector<GLfloat>& verts){
 	//				L1,     l2,    x,    y,     z,    normal, verts
 	createRectangleZ(0.25f, 0.75f, 0.0f, 1.75f, 0.3f, 1.0f, verts);
 	createRectangleZ(0.25f, 0.75f, 0.0f, 1.75f, 0.2f, -1.0f, verts);
 	createRectangleX(0.75f, 0.10f, 0.125f, 1.75f, 0.25f, 1.0f, verts);
 	createRectangleX(0.75f, 0.10f, -0.125f, 1.75f, 0.25f, -1.0f, verts);
-	createRectangleY(0.25f, 0.10f, 0.0f, 2.125f, .25f, -1.0f, verts);
-}
-
-vector<GLfloat> generateOffsetVec(vector<GLfloat> inVec){
-	vector<GLfloat> offsetVec;
-	std::cout << inVec.size();
-
-	for (unsigned int i = 0; i < inVec.size(); i++){
-		std::cout << i << " val : " << inVec[i];
-		if ( i % 6 == 5){
-			offsetVec.push_back( 0.0f );
-		} else{
-			offsetVec.push_back(inVec[i]);
-		}
-	}
-	return offsetVec;
+	createRectangleY(0.25f, 0.10f, 0.0f, 2.125f, .25f, 1.0f, verts);
 }
 
 // Generate and load the texture
@@ -484,7 +527,7 @@ void UGenerateTexture(){
 	glBindTexture(GL_TEXTURE_2D, texture);
 
 	int width, height;
-
+	// use the gold7.jpg from roject root.
 	unsigned char* image = SOIL_load_image("gold7.jpg", &width, &height, 0, SOIL_LOAD_RGB); // Loads texture
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
@@ -493,7 +536,7 @@ void UGenerateTexture(){
 	glBindTexture(GL_TEXTURE_2D, 0); // unbind texture
 }
 
-
+// Rectangle for each orientation
 void createRectangleZ(float xSide, float ySide, float x, float y, float z, float norm, vector<GLfloat>& verts){
 	// It will take 2 triangles to draw this rectangle
 
@@ -733,6 +776,8 @@ void createRectangleY(float xSide, float zSide, float x, float y, float z, float
 	verts.push_back((float)(rand() % 100) / 100.0f);
 
 }
+
+// Draw an equalateral triangle in a given position
 void createEqualTriangle(float size, float x, float y, float z, float norm, vector<GLfloat>& verts){
 
 	// Point 1 of triangle
@@ -773,6 +818,7 @@ void createEqualTriangle(float size, float x, float y, float z, float norm, vect
 	verts.push_back((float)(rand() % 100) / 100.0f);
 }
 
+// draw the edges of the pan pommel area (sides of triangle)
 void createEdgesOfTriangle(vector<GLfloat>& verts){
 
 	verts.push_back(0.0f);
@@ -979,10 +1025,9 @@ void createEdgesOfTriangle(vector<GLfloat>& verts){
 	verts.push_back((float)(rand() % 100) / 100.0f);
 	verts.push_back((float)(rand() % 100) / 100.0f);
 
-
-
 }
 
+// Draw a circle of a given radius, point density, position, normal
 void drawCircle(float radius, int numPoints, GLfloat centX, GLfloat centY, GLfloat centZ, GLfloat norm1, GLfloat norm2, GLfloat norm3, vector<GLfloat>& verts){
 
 	float theta = 360.0f / (float)numPoints;
@@ -1020,8 +1065,8 @@ void drawCircle(float radius, int numPoints, GLfloat centX, GLfloat centY, GLflo
 		verts.push_back(norm2);
 		verts.push_back(norm3);
 		// texture
-		verts.push_back((float)(rand() % 100) / 100.0f);
-		verts.push_back((float)(rand() % 100) / 100.0f);
+		verts.push_back(cos(pt1Rad) * 1.0f);
+		verts.push_back(sin(pt1Rad) * 1.0f);
 
 		// Add a point for this current point
 		verts.push_back(cos(pt2Rad) * radius);
@@ -1032,8 +1077,8 @@ void drawCircle(float radius, int numPoints, GLfloat centX, GLfloat centY, GLflo
 		verts.push_back(norm2);
 		verts.push_back(norm3);
 		// texture
-		verts.push_back((float)(rand() % 100) / 100.0f);
-		verts.push_back((float)(rand() % 100) / 100.0f);
+		verts.push_back(cos(pt2Rad) * 1.0f);
+		verts.push_back(sin(pt2Rad) * 1.0f);
 	}
 }
 
@@ -1067,7 +1112,6 @@ void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, GLfloat normX,
 	// draw triangle of points c1[0], c1[1], c2[0]
 	// then c2[0], c2[1], c1[1]
 	// we will use modulous to make sure we don't go over max number of verts
-
 	float theta = 360.0f / (float)c1.size();
 
 	for ( unsigned int i = 0; i < c1.size(); i+=3 ){
@@ -1150,11 +1194,9 @@ void drawConnectedCircles(vector<GLfloat> c1, vector<GLfloat> c2, GLfloat normX,
 	}
 }
 
-
-/// ******************************************************************************
-// Mouse functions
-/// ******************************************************************************
-
+/***********************************************************************************
+ * Keyboard/Mouse functions
+ ***********************************************************************************/
 void UMouseEntryFunc(int state){
 	if( state == GLUT_LEFT) {
 		// Start auto rotate
@@ -1194,12 +1236,12 @@ void orbit(int x, int y){
 	// Accumulates the yaw and pitch vars
 	yaw += mouseXOffset;
 	pitch += mouseYOffset;
-	std::cout << pitch << endl;
 
 	// Orbits around the center
 	front.x = 10.0f * cos(yaw);
 	front.z = sin(yaw) * cos(pitch) * 10.0f;
 
+	// clamp pitch to prevent straing camera movement
 	if( pitch < -1 || pitch > 1 ) {
 		return;
 	}
@@ -1219,7 +1261,7 @@ void UKeyboard(unsigned char key, int x, int y){
 
 }
 void UKeyReleased(unsigned char key, int x, int y){
-
+	// Not used
 }
 
 void toggleOrtho(){
