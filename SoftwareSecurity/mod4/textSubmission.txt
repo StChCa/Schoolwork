@@ -1,0 +1,8 @@
+How did your process allow for secure communications?
+	By encrypting the message, we are abstracting the data so that no one can read it unless they have the correct key to access it. In this example, I create a private key, then encrypt the private key with the teachers public key. Then by supply ing the private key which was encrypted by the teachers public key, the teacher will be able to decrypt the key and use the key to decrypt the text file and read the message.
+
+What is the difference between symmetric and asymmetric keys?
+	A symmetric key uses 1 key for both encryption and decryption of data. With asymetric keys, there is a private key, and a public key. The public key is used to encrypt data, but is unable to decrypt that data, while the private key is able to decrypt that data.
+
+Why did you need to use both symmetric and asymmetric keys in this process? Is one encryption process more computationally intensive than the other?
+	In this example we used both symmetric and asymmetric keys. The Key I generated is symmetric so the data I encrypted can be decrypted with the same key. The key supplied by the teacher was an asymmetric key meaning that the key can encrypt data, but cannot decrypt data. The private key (which the teacher reatained) can be used to decrypt data encrypted by the teachers public key. I don't think one is moer intensive than the other unless you are trying to derive the private key from the public key in asymetric keys since "the math and computing power is not yet available to do so."
