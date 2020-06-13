@@ -46,13 +46,17 @@
 			</exclusions>
 		</dependency>
 	</dependencies>
-
 	<build>
 		<plugins>
 			<plugin>
               <groupId>org.owasp</groupId>
               <artifactId>dependency-check-maven</artifactId>
               <version>5.3.2</version>
+              <configuration>
+              	<suppressionFiles>
+			  		<suppressionFile>suppression.xml</suppressionFile>
+			  	</suppressionFiles>
+              </configuration>
               <executions>
                   <execution>
                       <goals>
@@ -67,5 +71,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>
