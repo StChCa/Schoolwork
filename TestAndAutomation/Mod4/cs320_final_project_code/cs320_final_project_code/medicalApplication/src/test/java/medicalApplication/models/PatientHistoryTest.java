@@ -3,6 +3,10 @@ package medicalApplication.models;
 import static org.junit.Assert.*;
 
 import java.awt.List;
+<<<<<<< HEAD
+=======
+import java.util.ArrayList;
+>>>>>>> 5a259d1... Add JUnit tests to final project
 
 import org.junit.Before;
 import org.junit.Test;
@@ -79,4 +83,46 @@ public class PatientHistoryTest {
 		}
 		fail("Treatment was not added to PatientHistory.medications");
 	}
+<<<<<<< HEAD
+=======
+	
+	// Test adding a medication before a treatment
+	@Test
+	public void testAddMedicationBeforeTreatment() {
+		PatientHistory h = new PatientHistory();
+		Medication m = new Medication("medicine", "start", "end", "dose");
+		
+		// this should fail since no treatment has been done
+		h.addMedication(m);
+		if( h.getAllMedications().contains(m)) {
+			fail("Failure: Medication was added before a treatment. this should not happen");
+		} else {
+			assertTrue(true);
+		}
+	}
+	
+	// Test adding 1 to many medications post treatment
+	@Test
+	public void testAddManyMedications() {
+		PatientHistory h = new PatientHistory();
+		
+		Treatment treatment = new Treatment("date", "diagnose", "description");
+		Medication m1 = new Medication("medicine1", "start", "end", "dose");
+		Medication m2 = new Medication("medicine2", "start", "end", "dose");
+		Medication m3 = new Medication("medicine3", "start", "end", "dose");
+		
+		h.addTreatment(treatment);
+		h.addMedication(m1);
+		h.addMedication(m2);
+		h.addMedication(m3);
+		
+		ArrayList<Medication> expectedMeds = new ArrayList<Medication>();
+		
+		expectedMeds.add(m1);
+		expectedMeds.add(m2);
+		expectedMeds.add(m3);
+		
+		assertEquals(expectedMeds, h.getAllMedications());
+	}
+>>>>>>> 5a259d1... Add JUnit tests to final project
 }

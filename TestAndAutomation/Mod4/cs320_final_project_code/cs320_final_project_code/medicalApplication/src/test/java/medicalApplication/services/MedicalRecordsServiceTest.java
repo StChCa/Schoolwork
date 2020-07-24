@@ -2,6 +2,11 @@ package medicalApplication.services;
 
 import static org.junit.Assert.*;
 
+<<<<<<< HEAD
+=======
+import java.util.ArrayList;
+import java.util.Hashtable;
+>>>>>>> 5a259d1... Add JUnit tests to final project
 import java.util.List;
 
 import org.junit.Test;
@@ -101,6 +106,7 @@ public class MedicalRecordsServiceTest {
 	// Test MedicalRecordService::getPatientsWithAllergies
 	@Test
 	public void testGetPatientsWithAllergies() {
+<<<<<<< HEAD
 		int numPatientsToTest = 30;
 		Patient[] testPatients = new Patient[numPatientsToTest];
 		Allergey[] allergies = {new Allergey("AllergyA"), new Allergey("AllergyB"), new Allergey("none")};
@@ -141,6 +147,82 @@ public class MedicalRecordsServiceTest {
 		System.out.println("AllergyB " + allergyBCount);
 		System.out.println("No allergy " + noAllergyCount);
 		assertTrue( (allergyACount == 10) && (allergyACount == allergyBCount) && (allergyACount == noAllergyCount) );
+=======
+		// Create patients and allergies
+		Patient p1 = new Patient("p1", "p1");
+		Patient p2 = new Patient("p2", "p2");
+		Patient p3 = new Patient("p3", "p3");
+		Patient p4 = new Patient("p4", "p4");
+		
+		Allergey a1 = new Allergey("a1");
+		Allergey a2 = new Allergey("a2");
+		
+		// create a dictionary mapping patients to allergies.
+		Hashtable<Patient, Allergey> patientDict = new Hashtable<Patient, Allergey>();
+		
+		// Assign allergies to patients
+		patientDict.put(p1, a1);
+		patientDict.put(p2, a1);
+		patientDict.put(p3, a1);
+		patientDict.put(p4, a2);
+		
+		for(Patient key : patientDict.keySet()) {
+			// Add patient to this medical record
+			testService.getReference().addPatient(key.getName(), key.getId());
+			// Get this patients medical record
+			MedicalRecord mrRef = testService.getReference().getMedicalRecord(key.getId());
+			
+			if (mrRef != null) {
+				mrRef.getHistory().addAllergy(patientDict.get(key));
+			} else {
+				fail("unable to add allergy to patient history.");
+			}
+		}
+		
+		// Create arrays of known patients with each allergy.
+		List<Patient> expectedA1 = new ArrayList<Patient>();
+		List<Patient> expectedA2 = new ArrayList<Patient>();
+		
+		expectedA1.add(p1);
+		expectedA1.add(p2);
+		expectedA1.add(p3);
+		
+		expectedA2.add(p4);
+		
+		List<Patient> actualA1 = new ArrayList<Patient>();
+		List<Patient> actualA2 = new ArrayList<Patient>();
+		
+		try {
+			for (Patient p : testService.getPatientsWithAllergies("a1")) {
+				actualA1.add(p);
+			}
+			
+			for (Patient p : testService.getPatientsWithAllergies("a2")) {
+				actualA2.add(p);
+			}			
+		} catch(Exception e) {
+			fail("Problem with retreiving list of patients with a given allergy");
+		}
+
+		assertTrue( (expectedA1.equals(actualA1)) && (expectedA2.equals(actualA2)) );
+	}
+	
+	// Test getPatientsWithAllergies when 0 patients have this allergey
+	@Test
+	public void testGetPatientsWithAllergiesWhenNoneHaveAllergies() {
+		Allergey noPatientAllergey = new Allergey("NoOneHasThis");
+		
+		List actual = null;
+		try {
+			actual = testService.getReference().getPatientsWithAllergies(noPatientAllergey.getName());	
+		} catch( Exception e) {
+			fail("Exception thrown when trying to access an allergey that no patients have");
+		}
+		
+		List<Allergey> expected = new ArrayList<>();
+		
+		assertEquals(actual, expected);
+>>>>>>> 5a259d1... Add JUnit tests to final project
 	}
 	
 	
