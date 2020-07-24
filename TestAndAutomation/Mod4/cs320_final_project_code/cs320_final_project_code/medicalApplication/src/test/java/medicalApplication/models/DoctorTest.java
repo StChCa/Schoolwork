@@ -1,4 +1,4 @@
-package medicalApplication;
+package medicalApplication.models;
 
 import static org.junit.Assert.*;
 
