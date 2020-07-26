@@ -179,5 +179,31 @@ public class MedicalRecordsServiceTest {
 		assertEquals(actual, expected);
 	}
 	
+	// Test adding multiple patients with the same id
+	@Test
+	public void testPatientsWithSameId() {
+		Patient p1 = new Patient("A", "1");
+		Patient p2 = new Patient("A", "2");
+		Patient p3 = new Patient("A", "2");
+		
+		boolean b1 = testService.getReference().addPatient(p1.getName(), p1.getId());
+		boolean b2 = testService.getReference().addPatient(p2.getName(), p2.getId());
+		boolean b3 = testService.getReference().addPatient(p3.getName(), p3.getId());
+		
+		assertTrue( (b1==true) && (b2==true) && (b3==false));
+	}
+	
+	// Attempt to receive a medical record that should not exist
+	@Test
+	public void testGetMedicalRecordThatDoesNotExist() {
+		MedicalRecord record;
+		try {
+			record = testService.getMedicalRecord("NonExistantID");
+			assertTrue(record == null);
+		} catch(Exception e) {
+			fail("We should return null when no record exists instead of throwing an exception.");
+		}
+	}
+	
 	
 }
