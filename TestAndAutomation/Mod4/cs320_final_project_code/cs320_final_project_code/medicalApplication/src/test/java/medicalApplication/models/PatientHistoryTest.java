@@ -3,10 +3,7 @@ package medicalApplication.models;
 import static org.junit.Assert.*;
 
 import java.awt.List;
-<<<<<<< HEAD
-=======
 import java.util.ArrayList;
->>>>>>> 5a259d1... Add JUnit tests to final project
 
 import org.junit.Before;
 import org.junit.Test;
@@ -83,8 +80,6 @@ public class PatientHistoryTest {
 		}
 		fail("Treatment was not added to PatientHistory.medications");
 	}
-<<<<<<< HEAD
-=======
 	
 	// Test adding a medication before a treatment
 	@Test
@@ -124,5 +119,4 @@ public class PatientHistoryTest {
 		
 		assertEquals(expectedMeds, h.getAllMedications());
 	}
->>>>>>> 5a259d1... Add JUnit tests to final project
 }

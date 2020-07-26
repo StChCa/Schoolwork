@@ -2,11 +2,8 @@ package medicalApplication.services;
 
 import static org.junit.Assert.*;
 
-<<<<<<< HEAD
-=======
 import java.util.ArrayList;
 import java.util.Hashtable;
->>>>>>> 5a259d1... Add JUnit tests to final project
 import java.util.List;
 
 import org.junit.Test;
@@ -106,48 +103,6 @@ public class MedicalRecordsServiceTest {
 	// Test MedicalRecordService::getPatientsWithAllergies
 	@Test
 	public void testGetPatientsWithAllergies() {
-<<<<<<< HEAD
-		int numPatientsToTest = 30;
-		Patient[] testPatients = new Patient[numPatientsToTest];
-		Allergey[] allergies = {new Allergey("AllergyA"), new Allergey("AllergyB"), new Allergey("none")};
-		
-		// Populate our array 
-		for(int x = 0; x < numPatientsToTest; x++) {
-			testPatients[x] = new Patient("Name"+Integer.toString(x), "ID" + Integer.toString(x));
-		}
-		
-		// Add our ptients to the MedicalRecordService.
-		for( Patient patient : testPatients ) {
-			testService.addPatient(patient.getName(), patient.getId());
-		}
-		// Give some patinets AllergyA, some AllergyB and some none
-		for( int t = 0; t < testPatients.length; t++) {
-			MedicalRecord mr = testService.getMedicalRecord(testPatients[t].getId());
-			int allergyCase = t % 3;
-			
-			switch (allergyCase) {
-				case 0:
-					mr.getHistory().addAllergy(allergies[0]);
-					break;
-				case 1:
-					mr.getHistory().addAllergy(allergies[1]);
-					break;
-				case 2:
-					mr.getHistory().addAllergy(allergies[2]);
-					break;
-			}
-		}
-		MedicalRescordService newService = MedicalRescordService.getReference();
-		// Get the number of patients with each allergy (should be 10, 10, 10)
-		List<Patient> allergyACount = newService.getPatientsWithAllergies(allergies[0].getName());
-		List<Patient> allergyBCount = newService.getPatientsWithAllergies(allergies[1].getName());
-		List<Patient> noAllergyCount = newService.getPatientsWithAllergies(allergies[2].getName());
-		
-		System.out.println("AllergyA " + allergyACount);
-		System.out.println("AllergyB " + allergyBCount);
-		System.out.println("No allergy " + noAllergyCount);
-		assertTrue( (allergyACount == 10) && (allergyACount == allergyBCount) && (allergyACount == noAllergyCount) );
-=======
 		// Create patients and allergies
 		Patient p1 = new Patient("p1", "p1");
 		Patient p2 = new Patient("p2", "p2");
@@ -222,7 +177,32 @@ public class MedicalRecordsServiceTest {
 		List<Allergey> expected = new ArrayList<>();
 		
 		assertEquals(actual, expected);
->>>>>>> 5a259d1... Add JUnit tests to final project
+	}
+	
+	// Test adding multiple patients with the same id
+	@Test
+	public void testPatientsWithSameId() {
+		Patient p1 = new Patient("A", "1");
+		Patient p2 = new Patient("A", "2");
+		Patient p3 = new Patient("A", "2");
+		
+		boolean b1 = testService.getReference().addPatient(p1.getName(), p1.getId());
+		boolean b2 = testService.getReference().addPatient(p2.getName(), p2.getId());
+		boolean b3 = testService.getReference().addPatient(p3.getName(), p3.getId());
+		
+		assertTrue( (b1==true) && (b2==true) && (b3==false));
+	}
+	
+	// Attempt to receive a medical record that should not exist
+	@Test
+	public void testGetMedicalRecordThatDoesNotExist() {
+		MedicalRecord record;
+		try {
+			record = testService.getMedicalRecord("NonExistantID");
+			assertTrue(record == null);
+		} catch(Exception e) {
+			fail("We should return null when no record exists instead of throwing an exception.");
+		}
 	}
 	
 	

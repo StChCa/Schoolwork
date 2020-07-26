@@ -47,8 +47,6 @@ public class DoctorServiceTest {
 		}
 		fail("testAddDoctor() : Doctor was not properly added to DoctorService Singleton.");
 	}
-<<<<<<< HEAD
-=======
 	
 	// Test adding doctors of the same name with different ID's (per the Test Plan)
 	@Test
@@ -60,6 +58,5 @@ public class DoctorServiceTest {
 		// Doctor 3 should fail because the ID is not unique.
 		assertTrue( (d1 == true) && (d2 == true) && (d3 == false));
 	}
->>>>>>> 5a259d1... Add JUnit tests to final project
 
 }
