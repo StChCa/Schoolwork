@@ -1,0 +1,24 @@
+a. What is the distinct list of inspection results in the current inspections collection? How many are in the list? Use JavaScript code to find the answer.
+
+db.inspections.find() //will print all documents in the inspections collection.
+db.inspections.count() //will print the number of documents in the inspections collection.
+There are 81048 documents.
+(We could also use db.inspections.stats() to get more details that also includes the count)
+
+
+b. What is the difference in the date data type for the business named “AUSTIN 2012” versus your business document insertion of “Acme Explosives”?
+
+db.inspections.find({"business_name":"AUSTIN 2012"},{"date":1})
+db.inspections.find({"business_name":"ACME Explosives"},{"date":1})
+
+The above 2 queries return the date value for the corresponding business. By compring the results, I can see that 
+the date included for AUSTIN 2012 is plain text, while the date for ACME Explosives is a Javascript ISODate object.
+Javascript date object is preferred.
+
+
+
+c. How many businesses have been “padlocked”? (See Value column above.)
+
+db.inspections.find({"result":"Business Padlocked"}).count()
+The query above returns 2 so i know that 2 businesses have been padlocked.
+The 2 padlocked businesses are : "ACME Explosives", and "Antique Garage Inc"
