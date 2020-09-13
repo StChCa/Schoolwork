@@ -1,0 +1,113 @@
+Stephen Cardone
+2.
+a. List alphabetically only the first 20 names of companies founded after the year 2010.
+
+> db.research.find({"founded_year":{$gt:2010}}, {name:1,founded_year:1,_id:0}).sort({"name":1}).limit(20)
+{ "name" : "4shared", "founded_year" : 2011 }
+{ "name" : "Advaliant", "founded_year" : 2013 }
+{ "name" : "Advisor", "founded_year" : 2011 }
+{ "name" : "Baveo", "founded_year" : 2011 }
+{ "name" : "Bling Easy", "founded_year" : 2012 }
+{ "name" : "Carfeine", "founded_year" : 2012 }
+{ "name" : "CircleUp", "founded_year" : 2011 }
+{ "name" : "Clowdy", "founded_year" : 2013 }
+{ "name" : "CompareChecker", "founded_year" : 2011 }
+{ "name" : "Cyphercor", "founded_year" : 2011 }
+{ "name" : "DocASAP", "founded_year" : 2012 }
+{ "name" : "Easel", "founded_year" : 2012 }
+{ "name" : "EasyBib", "founded_year" : 2011 }
+{ "name" : "Emotive Communications", "founded_year" : 2011 }
+{ "name" : "FAT Media", "founded_year" : 2012 }
+{ "name" : "FamilyDen", "founded_year" : 2011 }
+{ "name" : "FirstString", "founded_year" : 2011 }
+{ "name" : "Fixya", "founded_year" : 2013 }
+{ "name" : "Fliggo", "founded_year" : 2012 }
+{ "name" : "Fluc", "founded_year" : 2013 }
+
+
+
+b. List only the first 20 names of companies with offices either in California or Texas, ordered by the number of employees and sorted largest to
+smallest.
+
+> db.research.find({ $or:[ {"offices.state_code":"CA"}, {"offices.state_code":"TX"}] } , {name:1,number_of_employees:1,"_id":0}).sort({"number_of_employees":-1}).limit(20)
+{ "name" : "PayPal", "number_of_employees" : 300000 }
+{ "name" : "Samsung Electronics", "number_of_employees" : 221726 }
+{ "name" : "Accenture", "number_of_employees" : 205000 }
+{ "name" : "Flextronics International", "number_of_employees" : 200000 }
+{ "name" : "Safeway", "number_of_employees" : 186000 }
+{ "name" : "Sony", "number_of_employees" : 180500 }
+{ "name" : "Intel", "number_of_employees" : 86300 }
+{ "name" : "Apple", "number_of_employees" : 80000 }
+{ "name" : "Dell", "number_of_employees" : 80000 }
+{ "name" : "ExxonMobil", "number_of_employees" : 76900 }
+{ "name" : "Affiliated Computer Services", "number_of_employees" : 74000 }
+{ "name" : "Cisco", "number_of_employees" : 63000 }
+{ "name" : "Sun Microsystems", "number_of_employees" : 33350 }
+{ "name" : "Texas Instruments", "number_of_employees" : 30175 }
+{ "name" : "Google", "number_of_employees" : 28000 }
+{ "name" : "The Walt Disney Company", "number_of_employees" : 25000 }
+{ "name" : "Avaya", "number_of_employees" : 18000 }
+{ "name" : "AMD", "number_of_employees" : 16420 }
+{ "name" : "Experian", "number_of_employees" : 15500 }
+{ "name" : "eBay", "number_of_employees" : 15000 }
+
+
+3.
+a. Design and implement a pipeline to show the total number of employees by state for all companies that have offices in the United States.
+
+db.research.aggregate(
+	[
+		{$unwind: "$offices"},
+		{$match: {"offices.country_code": "USA"}},
+		{$group: {_id: "$offices.state_code", employees: {$sum: "$number_of_employees"}}},
+		{$sort: {_id: 1}}
+	]
+)
+
+{ "_id" : null, "employees" : 68453 }
+{ "_id" : "AL", "employees" : 57794 }
+{ "_id" : "AR", "employees" : 12412 }
+{ "_id" : "AZ", "employees" : 54181 }
+{ "_id" : "CA", "employees" : 2149593 }
+{ "_id" : "CO", "employees" : 69188 }
+{ "_id" : "CT", "employees" : 1585 }
+{ "_id" : "DC", "employees" : 37964 }
+{ "_id" : "DE", "employees" : 1639 }
+{ "_id" : "FL", "employees" : 62936 }
+{ "_id" : "GA", "employees" : 333721 }
+{ "_id" : "HI", "employees" : 173 }
+{ "_id" : "IA", "employees" : 3268 }
+{ "_id" : "ID", "employees" : 90135 }
+{ "_id" : "IL", "employees" : 279012 }
+{ "_id" : "IN", "employees" : 360 }
+{ "_id" : "KS", "employees" : 337 }
+{ "_id" : "KY", "employees" : 1950 }
+{ "_id" : "LA", "employees" : 335 }
+{ "_id" : "MA", "employees" : 315187 }
+
+
+
+b. Design and implement a pipeline to show the names, total number of funding rounds, and average amount of money raised from funding rounds
+for companies that have funding rounds data, excluding those that do not. Show only the top 10 by average amount raised.
+
+db.research.aggregate(
+	[
+		{$match: {"total_money_raised": {"$ne": "$0"}}}, 
+		{$project: {"_id": 0, "name": 1, "funding_rounds": 1}}, 
+		{$unwind: "$funding_rounds"}, 
+		{$group: {"_id": "$name", "average": {"$avg": "$funding_rounds.raised_amount"}, "total_rounds": {"$sum": 1}}}, 
+		{$sort: {"average": -1}}, {$project: {"Name": "$_id", "_id": 0, "total_rounds": "$total_rounds", "Average_amount_raised":"$average"}}, 
+		{$limit:10}
+	]
+)
+
+{ "total_rounds" : 4, "Name" : "Clearwire", "Average_amount_raised" : 1425000000 }
+{ "total_rounds" : 1, "Name" : "Terra-Gen Power", "Average_amount_raised" : 1200000000 }
+{ "total_rounds" : 1, "Name" : "Xerox", "Average_amount_raised" : 1100000000 }
+{ "total_rounds" : 1, "Name" : "Blackberry", "Average_amount_raised" : 1000000000 }
+{ "total_rounds" : 1, "Name" : "AOL", "Average_amount_raised" : 1000000000 }
+{ "total_rounds" : 1, "Name" : "Telefonica", "Average_amount_raised" : 743000000 }
+{ "total_rounds" : 6, "Name" : "DeNA", "Average_amount_raised" : 736000000 }
+{ "total_rounds" : 1, "Name" : "Comcast", "Average_amount_raised" : 725000000 }
+{ "total_rounds" : 1, "Name" : "FriendFinder Networks", "Average_amount_raised" : 551200000 }
+{ "total_rounds" : 2, "Name" : "Sirius XM Radio, Inc.", "Average_amount_raised" : 527875000 }
