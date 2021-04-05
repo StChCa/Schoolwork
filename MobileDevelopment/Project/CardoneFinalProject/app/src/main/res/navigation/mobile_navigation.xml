@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/navigation_inventory">
+
+    <fragment
+        android:id="@+id/navigation_inventory"
+        android:name="com.snhu.finalproject.ui.inventory.InventoryFragment"
+        android:label="InventoryN"
+        tools:layout="@layout/fragment_inventory" />
+
+    <fragment
+        android:id="@+id/navigation_add_remove"
+        android:name="com.snhu.finalproject.ui.addRemove.AddRemoveFragment"
+        android:label="Add/RemoveN"
+        tools:layout="@layout/fragment_add_remove" />
+
+    <fragment
+        android:id="@+id/navigation_increase_decrease"
+        android:name="com.snhu.finalproject.ui.IncreaseDecrease.IncreaseDecreaseFragment"
+        android:label="Increase/DecreaseN"
+        tools:layout="@layout/fragment_increase_decrease" />
+</navigation>
