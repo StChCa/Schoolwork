@@ -11,7 +11,8 @@
         android:id="@+id/buttonAdd"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Add Items"
+        android:text="Add"
+        android:onClick="incrementInventoryItem"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -22,7 +23,8 @@
         android:id="@+id/buttonRemove"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Remove Items"
+        android:text="Remove"
+        android:onClick="decrementInventoryItem"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/buttonAdd" />
@@ -32,8 +34,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ems="10"
+        android:hint="PartNumber"
         android:inputType="textPersonName"
-        android:text="PartNumber"
         app:layout_constraintBottom_toTopOf="@+id/buttonAdd"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -44,8 +46,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ems="10"
+        android:hint="Quantity"
         android:inputType="textPersonName"
-        android:text="Quantity"
         app:layout_constraintBottom_toTopOf="@+id/buttonAdd"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -60,10 +62,21 @@
         android:layout_marginTop="8dp"
         android:textAlignment="center"
         android:textSize="20sp"
+        android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.719" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text='Edit inventory values for an item.\nInput an existing part number\nInput the quantity to adjust\n"Add" to add quantity to stock\n"Remove" to remove quantity from stock'
+        app:layout_constraintBottom_toTopOf="@+id/editTextPartNumber"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
