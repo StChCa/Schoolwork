@@ -1,0 +1,24 @@
+{
+    "errorType": "AccessDeniedException",
+    "errorMessage": "User: arn:aws:sts::902808600746:assumed-role/TableScan-role-rp1wbsgk/TableScan is not authorized to perform: dynamodb:Scan on resource: arn:aws:dynamodb:us-east-1:902808600746:table/Answer",
+    "code": "AccessDeniedException",
+    "message": "User: arn:aws:sts::902808600746:assumed-role/TableScan-role-rp1wbsgk/TableScan is not authorized to perform: dynamodb:Scan on resource: arn:aws:dynamodb:us-east-1:902808600746:table/Answer",
+    "time": "2021-07-31T17:01:26.753Z",
+    "requestId": "DJ0AR3NV0PM6GSJ67R59NJLVBFVV4KQNSO5AEMVJF66Q9ASUAAJG",
+    "statusCode": 400,
+    "retryable": false,
+    "retryDelay": 12.569187320791652,
+    "stack": [
+        "AccessDeniedException: User: arn:aws:sts::902808600746:assumed-role/TableScan-role-rp1wbsgk/TableScan is not authorized to perform: dynamodb:Scan on resource: arn:aws:dynamodb:us-east-1:902808600746:table/Answer",
+        "    at Request.extractError (/var/runtime/node_modules/aws-sdk/lib/protocol/json.js:52:27)",
+        "    at Request.callListeners (/var/runtime/node_modules/aws-sdk/lib/sequential_executor.js:106:20)",
+        "    at Request.emit (/var/runtime/node_modules/aws-sdk/lib/sequential_executor.js:78:10)",
+        "    at Request.emit (/var/runtime/node_modules/aws-sdk/lib/request.js:688:14)",
+        "    at Request.transition (/var/runtime/node_modules/aws-sdk/lib/request.js:22:10)",
+        "    at AcceptorStateMachine.runTo (/var/runtime/node_modules/aws-sdk/lib/state_machine.js:14:12)",
+        "    at /var/runtime/node_modules/aws-sdk/lib/state_machine.js:26:10",
+        "    at Request.<anonymous> (/var/runtime/node_modules/aws-sdk/lib/request.js:38:9)",
+        "    at Request.<anonymous> (/var/runtime/node_modules/aws-sdk/lib/request.js:690:12)",
+        "    at Request.callListeners (/var/runtime/node_modules/aws-sdk/lib/sequential_executor.js:116:18)"
+    ]
+}
